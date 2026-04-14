@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Importar Lancamentos - {{ nome_sistema }}{% endblock %}
+{% block page_title %}Importar Lancamentos{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-upload me-2"></i>Upload de Arquivo</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <div class="mb-3">
+                            <label class="form-label">Arquivo Excel ou CSV</label>
+                            <input type="file" name="arquivo" class="form-control" accept=".xlsx,.csv" required>
+                            <small class="text-muted">Formatos suportados: .xlsx (Excel) ou .csv</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Obra Padrao (opcional)</label>
+                            <select name="obra_id_padrao" class="form-control">
+                                <option value="">-- Detectar automaticamente pelo nome --</option>
+                                {% for obra in obras %}
+                                <option value="{{ obra.id }}">{{ obra.nome }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">Se nao informada, o sistema tentara encontrar a obra pelo nome na planilha</small>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-upload me-2"></i> Importar
+                            </button>
+                            <a href="{{ url_for('excel.baixar_modelo') }}" class="btn btn-outline">
+                                <i class="bi bi-download me-2"></i> Baixar Modelo
+                            </a>
+                            <a href="{{ url_for('main.lancamentos') }}" class="btn btn-outline">
+                                Voltar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Instrucoes</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Colunas Obrigatorias</h6>
+                    <ul class="small text-muted mb-3">
+                        <li><strong>Descricao</strong> - Descricao do lancamento</li>
+                        <li><strong>Valor</strong> - Valor numerico (positivo ou negativo)</li>
+                        <li><strong>Data</strong> - Data do lancamento (DD/MM/AAAA)</li>
+                    </ul>
+
+                    <h6>Colunas Opcionais</h6>
+                    <ul class="small text-muted mb-3">
+                        <li><strong>Obra</strong> - Nome da obra (para vincular)</li>
+                        <li><strong>Categoria</strong> - Categoria do lancamento</li>
+                        <li><strong>Tipo</strong> - Receita ou Despesa</li>
+                        <li><strong>Forma Pagamento</strong> - PIX, Boleto, etc</li>
+                        <li><strong>Status</strong> - Pago, Pendente, etc</li>
+                        <li><strong>Documento</strong> - Numero do documento</li>
+                        <li><strong>Observacoes</strong> - Observacoes adicionais</li>
+                    </ul>
+
+                    <h6>Formatos de Data Aceitos</h6>
+                    <ul class="small text-muted mb-3">
+                        <li>DD/MM/AAAA (ex: 15/01/2026)</li>
+                        <li>AAAA-MM-DD (ex: 2026-01-15)</li>
+                    </ul>
+
+                    <h6>Formatos de Valor</h6>
+                    <ul class="small text-muted">
+                        <li>Use ponto ou virgula como decimal</li>
+                        <li>Valores positivos = Receita</li>
+                        <li>Valores negativos = Despesa</li>
+                        <li>Ou informe explicitamente na coluna Tipo</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-shield-check me-2"></i>Validacoes</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="small text-muted">
+                        <li>Lancamentos duplicados (mesma data, valor e descricao) serao ignorados</li>
+                        <li>Se a obra nao for encontrada, sera usada a primeira obra disponivel</li>
+                        <li>Linhas com erro serao reportadas mas nao impedem a importacao das demais</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

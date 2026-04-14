@@ -6,6 +6,9 @@
 
 {% block topbar_actions %}
 <div style="display: flex; gap: 10px;">
+    <a href="{{ url_for('excel.importar_lancamentos') }}" class="btn btn-outline">
+        <i class="bi bi-upload me-2"></i>Importar
+    </a>
     <a href="{{ url_for('excel.exportar_lancamentos_excel', obra_id=obra_selecionada, tipo=tipo_selecionado, categoria=categoria_selecionada, data_inicio=data_inicio, data_fim=data_fim) }}" class="btn btn-success">
         <i class="bi bi-file-earmark-excel me-2"></i>Exportar Excel
     </a>

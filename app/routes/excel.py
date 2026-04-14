@@ -1,12 +1,13 @@
 """
-Rotas de exportacao Excel para o sistema OBRAS PRO
+Rotas de exportacao e importacao Excel para o sistema OBRAS PRO
 """
-from flask import Blueprint, request, session
+from flask import Blueprint, request, session, render_template, redirect, url_for, flash, make_response
 from datetime import datetime, date, timedelta
 from app.routes.auth import login_required
 from app.models import db, Obra, Lancamento
 from app.constants import StatusObra
 from app.utils.excel_export import ExcelExport
+from app.utils.excel_import import importar_lancamentos_excel, gerar_modelo_excel, ExcelImportError
 
 excel_bp = Blueprint('excel', __name__)
 
@@ -275,3 +276,133 @@ def exportar_relatorio_financeiro_excel():
     
     filename = f'relatorio_financeiro_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
     return exporter.to_response(filename)
+
+
+# ============================================================================
+# ROTAS DE IMPORTACAO
+# ============================================================================
+
+@excel_bp.route('/lancamentos/importar', methods=['GET', 'POST'])
+@login_required
+def importar_lancamentos():
+    """Importa lancamentos de arquivo Excel ou CSV"""
+    empresa_id = session.get('empresa_id')
+
+    # Buscar obras para o select
+    obras = Obra.query.filter_by(empresa_id=empresa_id).all()
+
+    if request.method == 'POST':
+        if 'arquivo' not in request.files:
+            flash('Nenhum arquivo enviado', 'danger')
+            return redirect(url_for('excel.importar_lancamentos'))
+
+        file = request.files['arquivo']
+        if file.filename == '':
+            flash('Nenhum arquivo selecionado', 'danger')
+            return redirect(url_for('excel.importar_lancamentos'))
+
+        # Validar extensao
+        allowed_extensions = {'xlsx', 'csv'}
+        ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
+        if ext not in allowed_extensions:
+            flash('Formato nao suportado. Use .xlsx ou .csv', 'danger')
+            return redirect(url_for('excel.importar_lancamentos'))
+
+        # Obra padrao (se informada)
+        obra_id_padrao = request.form.get('obra_id_padrao')
+        obra_padrao = None
+        if obra_id_padrao:
+            obra_padrao = Obra.query.filter_by(id=obra_id_padrao, empresa_id=empresa_id).first()
+
+        try:
+            # Processa o arquivo
+            lancamentos_data, erros = importar_lancamentos_excel(file, file.filename)
+
+            if not lancamentos_data and erros:
+                for erro in erros[:10]:
+                    flash(erro, 'warning')
+                return redirect(url_for('excel.importar_lancamentos'))
+
+            # Importa para o banco
+            importados = 0
+            duplicados = 0
+
+            for data in lancamentos_data:
+                # Tenta encontrar obra pelo nome
+                obra = obra_padrao
+                if data.get('obra_nome') and not obra:
+                    obra = Obra.query.filter(
+                        Obra.empresa_id == empresa_id,
+                        Obra.nome.ilike(f"%{data['obra_nome']}%")
+                    ).first()
+
+                if not obra:
+                    # Usa primeira obra como padrao
+                    obra = Obra.query.filter_by(empresa_id=empresa_id).first()
+                    if not obra:
+                        flash('Nenhuma obra encontrada para associar os lancamentos', 'danger')
+                        return redirect(url_for('excel.importar_lancamentos'))
+
+                # Verifica duplicado (mesma data, valor, descricao)
+                existente = Lancamento.query.filter_by(
+                    empresa_id=empresa_id,
+                    obra_id=obra.id,
+                    descricao=data['descricao'],
+                    valor=data['valor'],
+                    data=data['data']
+                ).first()
+
+                if existente:
+                    duplicados += 1
+                    continue
+
+                # Cria lancamento
+                lanc = Lancamento(
+                    empresa_id=empresa_id,
+                    obra_id=obra.id,
+                    descricao=data['descricao'],
+                    categoria=data.get('categoria', 'Geral'),
+                    tipo=data['tipo'],
+                    valor=data['valor'],
+                    data=data['data'],
+                    forma_pagamento=data.get('forma_pagamento', 'Transferencia'),
+                    status_pagamento=data.get('status_pagamento', 'Pago'),
+                    documento=data.get('documento', ''),
+                    observacoes=data.get('observacoes', '')
+                )
+                db.session.add(lanc)
+                importados += 1
+
+            db.session.commit()
+
+            # Mensagens de resultado
+            if importados > 0:
+                flash(f'{importados} lancamento(s) importado(s) com sucesso!', 'success')
+            if duplicados > 0:
+                flash(f'{duplicados} lancamento(s) ignorado(s) por serem duplicados', 'warning')
+            if erros:
+                for erro in erros[:5]:
+                    flash(erro, 'warning')
+
+            return redirect(url_for('main.lancamentos'))
+
+        except ExcelImportError as e:
+            flash(f'Erro na importacao: {str(e)}', 'danger')
+            return redirect(url_for('excel.importar_lancamentos'))
+        except Exception as e:
+            flash(f'Erro inesperado: {str(e)}', 'danger')
+            return redirect(url_for('excel.importar_lancamentos'))
+
+    return render_template('excel/importar_lancamentos.html', obras=obras)
+
+
+@excel_bp.route('/lancamentos/modelo')
+@login_required
+def baixar_modelo():
+    """Baixa arquivo Excel modelo para importacao"""
+    excel_data = gerar_modelo_excel()
+
+    response = make_response(excel_data)
+    response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    response.headers['Content-Disposition'] = 'attachment; filename=modelo_lancamentos.xlsx'
+    return response

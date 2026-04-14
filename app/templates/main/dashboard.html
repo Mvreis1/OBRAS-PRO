@@ -99,7 +99,7 @@ function toggleValores() {
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
                     <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Orcamento Total</div>
-                    <div class="stat-value" style="font-size: 22px;">{{ orcamento_total|format_currency }}</div>
+                    <div class="stat-value valor-mascarado mostrar" style="font-size: 22px;">{{ orcamento_total|format_currency }}</div>
                     <div class="stat-trend up">
                         <i class="bi bi-building"></i> 5 obras ativas
                     </div>
@@ -116,7 +116,7 @@ function toggleValores() {
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
                     <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Despesas do Mes</div>
-                    <div class="stat-value" style="font-size: 22px;">{{ despesas_mes|format_currency }}</div>
+                    <div class="stat-value valor-mascarado mostrar" style="font-size: 22px;">{{ despesas_mes|format_currency }}</div>
                     <div class="stat-trend down">
                         <i class="bi bi-arrow-up"></i> +12% vs mes anterior
                     </div>
@@ -133,7 +133,7 @@ function toggleValores() {
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
                     <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Receitas do Mes</div>
-                    <div class="stat-value" style="font-size: 22px; color: #4ade80;">{{ receitas_mes|format_currency }}</div>
+                    <div class="stat-value valor-mascarado mostrar" style="font-size: 22px; color: #4ade80;">{{ receitas_mes|format_currency }}</div>
                     <div class="stat-trend up">
                         <i class="bi bi-arrow-up"></i> +8% vs mes anterior
                     </div>
@@ -150,7 +150,7 @@ function toggleValores() {
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
                     <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Saldo Atual</div>
-                    <div class="stat-value" style="font-size: 22px; color: {% if saldo_atual >= 0 %}#4ade80{% else %}#f87171{% endif %};">
+                    <div class="stat-value valor-mascarado mostrar" style="font-size: 22px; color: {% if saldo_atual >= 0 %}#4ade80{% else %}#f87171{% endif %};">
                         {{ saldo_atual|format_currency }}
                     </div>
                     <div class="stat-trend {% if saldo_atual >= 0 %}up{% else %}down{% endif %}">
@@ -231,7 +231,7 @@ function toggleValores() {
                                 </span>
                             </td>
                             <td style="text-align: right; font-weight: 600; color: {% if lancamento.tipo == 'Receita' %}#4ade80{% else %}#f87171{% endif %}; font-size: 12px;">
-                                {% if lancamento.tipo == 'Receita' %}+{% else %}-{% endif %}{{ lancamento.valor|format_currency }}
+                                <span class="valor-mascarado mostrar">{% if lancamento.tipo == 'Receita' %}+{% else %}-{% endif %}{{ lancamento.valor|format_currency }}</span>
                             </td>
                         </tr>
                         {% else %}
@@ -267,7 +267,7 @@ function toggleValores() {
                     </div>
                     <div style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; color: var(--text-muted);">
                         <span>{{ obra.status }}</span>
-                        <span>{{ obra.orcamento_previsto|format_currency }}</span>
+                        <span class="valor-mascarado mostrar">{{ obra.orcamento_previsto|format_currency }}</span>
                     </div>
                 </div>
                 {% else %}
