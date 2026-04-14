@@ -20,3 +20,4 @@ openpyxl==3.1.5
 Flasgger==0.9.7.1
 APScheduler==3.10.4
 psutil==5.9.8
+Flask-Login==0.6.3
