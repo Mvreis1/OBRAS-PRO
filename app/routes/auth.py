@@ -10,6 +10,19 @@ from app.utils import get_empresa_id
 from app.utils.validacao import validate_email, validate_password, validate_cnpj_format
 import pyotp
 
+
+def login_required(f):
+    """Decorator para rotas que exigem login"""
+    from functools import wraps
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'usuario_id' not in session:
+            flash('Faça login para acessar esta página.', 'warning')
+            return redirect(url_for('auth.login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 auth_bp = Blueprint('auth', __name__)
 
 
