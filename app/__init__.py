@@ -145,15 +145,26 @@ def create_app():
     setup_context_processors(app)
     
     with app.app_context():
-        # Verifica se migrations existe e está configurado
-        migrations_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'migrations')
-        if os.path.exists(migrations_path) and os.path.exists(os.path.join(migrations_path, 'env.py')):
-            # Migrations configurado - usar Alembic para gerenciar schema
-            # db.create_all() não é necessário quando usando migrations
-            pass
-        else:
-            # Sem migrations ainda - criar tabelas básicas (apenas dev/primeira vez)
+        # Criar tabelas se não existirem (necessário para deploy no Render)
+        try:
             db.create_all()
+            app.logger.info("✅ Tabelas do banco de dados criadas/verificadas")
+        except Exception as e:
+            app.logger.error(f"❌ Erro ao criar tabelas: {e}")
+
+        # Inicializar dados básicos (roles, permissões)
+        try:
+            from app.models.acesso import Role, Permissao
+            from seed_rbac import seed_permissoes, seed_roles
+
+            # Verificar se já existe roles
+            if not Role.query.first():
+                app.logger.info("🌱 Inicializando roles e permissões...")
+                seed_permissoes()
+                seed_roles()
+                app.logger.info("✅ Dados iniciais criados")
+        except Exception as e:
+            app.logger.error(f"❌ Erro ao inicializar dados: {e}")
     
     @app.route('/uploads/<filename>')
     def uploaded_file(filename):

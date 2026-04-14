@@ -32,7 +32,7 @@ def login():
     # Rate limiting via Flask-Limiter configurado no app
     if request.method == 'POST':
         from datetime import datetime, timedelta
-        
+
         email = request.form.get('email', '').strip().lower()
         senha = request.form.get('senha', '')
         lembrar = request.form.get('lembrar')
@@ -51,7 +51,12 @@ def login():
             flash('Dados inválidos.', 'danger')
             return render_template('auth/login.html')
 
-        usuario = Usuario.query.filter_by(email=email, ativo=True).first()
+        try:
+            usuario = Usuario.query.filter_by(email=email, ativo=True).first()
+        except Exception as e:
+            current_app.logger.error(f"Erro ao consultar usuário: {e}")
+            flash('Erro ao acessar o banco de dados. Tente novamente.', 'danger')
+            return render_template('auth/login.html')
 
         if usuario:
             # Verificar se usuário está bloqueado
