@@ -94,6 +94,65 @@ def create_cli_commands(app):
             import traceback
             print(traceback.format_exc())
 
+    @app.cli.command()
+    def create_admin():
+        """Cria usuário admin para testes"""
+        from app.models import Empresa, Usuario
+        from app.models.acesso import Role
+        
+        print("👤 Criando usuário admin de teste...")
+        
+        try:
+            # Criar empresa
+            empresa = Empresa.query.filter_by(slug='admin-teste').first()
+            if not empresa:
+                empresa = Empresa(
+                    nome='Empresa Admin Teste',
+                    slug='admin-teste',
+                    cnpj='12345678000190',
+                    email='admin@teste.com',
+                    plano='pro',
+                    max_usuarios=10,
+                    max_obras=100
+                )
+                db.session.add(empresa)
+                db.session.flush()
+                print(f"✅ Empresa criada: {empresa.nome} (ID: {empresa.id})")
+            
+            # Buscar role Administrador
+            admin_role = Role.query.filter_by(nome='Administrador', is_system=True).first()
+            
+            # Criar usuário admin
+            usuario = Usuario.query.filter_by(email='admin@obraspro.com').first()
+            if not usuario:
+                usuario = Usuario(
+                    empresa_id=empresa.id,
+                    nome='Administrador',
+                    email='admin@obraspro.com',
+                    username='admin',
+                    cargo='Administrador',
+                    role='admin',
+                    role_id=admin_role.id if admin_role else None,
+                    ativo=True
+                )
+                usuario.set_senha('Admin123!')
+                db.session.add(usuario)
+                db.session.commit()
+                print(f"✅ Usuário admin criado!")
+                print(f"   Email: admin@obraspro.com")
+                print(f"   Senha: Admin123!")
+                print(f"   Empresa: {empresa.nome}")
+            else:
+                print("ℹ️ Usuário admin já existe")
+                print(f"   Email: admin@obraspro.com")
+                print(f"   Senha: Admin123!")
+                
+        except Exception as e:
+            print(f"❌ Erro: {e}")
+            import traceback
+            print(traceback.format_exc())
+            db.session.rollback()
+
 
 if __name__ == '__main__':
     from app.config import validate_production_config

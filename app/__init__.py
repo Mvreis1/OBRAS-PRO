@@ -206,6 +206,69 @@ def create_app():
             import traceback
             return {'status': 'error', 'error': str(e), 'traceback': traceback.format_exc()}, 500
 
+    # Rota para criar conta de teste (apenas para desenvolvimento)
+    @app.route('/setup-demo')
+    def setup_demo():
+        """Cria conta de demonstração"""
+        try:
+            from app.models import Empresa, Usuario
+            from app.models.acesso import Role
+            from seed_rbac import seed_rbac
+
+            # Executar seed se necessário
+            if Role.query.count() == 0:
+                seed_rbac()
+
+            # Criar empresa demo
+            empresa = Empresa.query.filter_by(slug='demo').first()
+            if not empresa:
+                empresa = Empresa(
+                    nome='Empresa Demo',
+                    slug='demo',
+                    cnpj='12345678000190',
+                    email='demo@obraspro.com',
+                    plano='pro',
+                    max_usuarios=10,
+                    max_obras=100
+                )
+                db.session.add(empresa)
+                db.session.flush()
+
+            # Buscar role Administrador
+            admin_role = Role.query.filter_by(nome='Administrador', is_system=True).first()
+
+            # Criar usuário admin
+            usuario = Usuario.query.filter_by(email='admin@demo.com').first()
+            if not usuario:
+                usuario = Usuario(
+                    empresa_id=empresa.id,
+                    nome='Admin Demo',
+                    email='admin@demo.com',
+                    username='admin',
+                    cargo='Administrador',
+                    role='admin',
+                    role_id=admin_role.id if admin_role else None,
+                    ativo=True
+                )
+                usuario.set_senha('demo123')
+                db.session.add(usuario)
+                db.session.commit()
+
+            return {
+                'status': 'ok',
+                'message': 'Conta de demonstração criada!',
+                'login_url': '/auth/login',
+                'credentials': {
+                    'email': 'admin@demo.com',
+                    'senha': 'demo123',
+                    'empresa': 'demo'
+                }
+            }, 200
+
+        except Exception as e:
+            import traceback
+            return {'status': 'error', 'error': str(e), 'traceback': traceback.format_exc()}, 500
+
     # Rota raiz para verificar se app está rodando
     @app.route('/')
     def root():
