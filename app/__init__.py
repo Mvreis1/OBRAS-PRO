@@ -508,6 +508,23 @@ def create_app():
             import traceback
             return {'status': 'error', 'error': str(e), 'traceback': traceback.format_exc()}, 500
 
+    # Rota de teste simples (sem banco de dados)
+    @app.route('/test')
+    def test_page():
+        """Rota de teste - sem dependencias"""
+        return {'status': 'ok', 'message': 'Servidor funcionando'}, 200
+
+    # Rota de teste com banco (simples)
+    @app.route('/test-db')
+    def test_db():
+        """Rota de teste com banco - query simples"""
+        try:
+            from app.models import Empresa
+            count = Empresa.query.count()
+            return {'status': 'ok', 'empresas': count}, 200
+        except Exception as e:
+            return {'status': 'error', 'error': str(e)}, 500
+
     # Rota raiz para verificar se app está rodando
     @app.route('/')
     def root():
