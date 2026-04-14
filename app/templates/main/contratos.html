@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% from "macros/paginacao.html" import renderizar_paginacao %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-file-earmark-text"></i> Contratos</h2>
+        <a href="{{ url_for('contratos.novo_contrato') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> Novo Contrato
+        </a>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('contratos.contratos') }}" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-outline{% endif %}">
+                            Todos
+                        </a>
+                        <a href="{{ url_for('contratos.contratos', status='Rascunho') }}" class="btn btn-sm {% if status_filter == 'Rascunho' %}btn-primary{% else %}btn-outline{% endif %}">
+                            Rascunho
+                        </a>
+                        <a href="{{ url_for('contratos.contratos', status='Ativo') }}" class="btn btn-sm {% if status_filter == 'Ativo' %}btn-primary{% else %}btn-outline{% endif %}">
+                            Ativo
+                        </a>
+                        <a href="{{ url_for('contratos.contratos', status='Encerrado') }}" class="btn btn-sm {% if status_filter == 'Encerrado' %}btn-primary{% else %}btn-outline{% endif %}">
+                            Encerrado
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for contrato in contratos %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h5 class="mb-1">{{ contrato.titulo }}</h5>
+                            <p class="text-muted mb-0">{{ contrato.cliente }}</p>
+                        </div>
+                        {% if contrato.status == 'Ativo' %}
+                        <span class="badge bg-success">Ativo</span>
+                        {% elif contrato.status == 'Rascunho' %}
+                        <span class="badge bg-secondary">Rascunho</span>
+                        {% elif contrato.status == 'Encerrado' %}
+                        <span class="badge bg-info">Encerrado</span>
+                        {% else %}
+                        <span class="badge bg-warning">{{ contrato.status }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-6">
+                            <small class="text-muted">Valor</small>
+                            <div class="fw-medium">{{ contrato.valor|format_currency }}</div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Tipo</small>
+                            <div>{{ contrato.tipo }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-2">
+                        <div class="col-6">
+                            <small class="text-muted">Início</small>
+                            <div>{{ contrato.data_inicio|format_date if contrato.data_inicio else '-' }}</div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Término</small>
+                            <div>{{ contrato.data_fim|format_date if contrato.data_fim else '-' }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3 pt-2 border-top">
+                        <a href="{{ url_for('contratos.contrato_detalhe', contrato_id=contrato.id) }}" class="btn btn-sm btn-outline">
+                            <i class="bi bi-eye"></i> Ver Detalhes
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-md-12">
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-file-earmark-text" style="font-size: 3rem;"></i>
+                <p class="mt-2">Nenhum contrato encontrado</p>
+                <a href="{{ url_for('contratos.novo_contrato') }}" class="btn btn-primary">Criar Primeiro Contrato</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {# Paginação #}
+    {{ renderizar_paginacao(paginacao, 'contratos.contratos', page_args) }}
+</div>
+{% endblock %}

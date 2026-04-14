@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% from "macros/paginacao.html" import renderizar_paginacao %}
+
+{% block page_title %}Fornecedor: {{ fornecedor.nome }}{% endblock %}
+
+{% block topbar_actions %}
+<div style="display: flex; gap: 10px;">
+    <a href="{{ url_for('fornecedores.fornecedores') }}" class="btn btn-outline">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+    <a href="{{ url_for('fornecedores.editar_fornecedor', fornecedor_id=fornecedor.id) }}" class="btn btn-outline">
+        <i class="bi bi-pencil"></i> Editar
+    </a>
+    <a href="{{ url_for('fornecedores.nova_compra', fornecedor_id=fornecedor.id) }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> Nova Compra
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Dados do Fornecedor</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Nome</h6>
+                        <p class="mb-3">{{ fornecedor.nome }}</p>
+                        
+                        <h6 class="text-muted">Razão Social</h6>
+                        <p class="mb-3">{{ fornecedor.razao_social or '-' }}</p>
+                        
+                        <h6 class="text-muted">CNPJ/CPF</h6>
+                        <p class="mb-3">{{ fornecedor.cnpj or fornecedor.cpf or '-' }}</p>
+                        
+                        <h6 class="text-muted">Email</h6>
+                        <p>{{ fornecedor.email or '-' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Telefone</h6>
+                        <p class="mb-3">{{ fornecedor.telefone or '-' }}</p>
+                        
+                        <h6 class="text-muted">Telefone 2</h6>
+                        <p class="mb-3">{{ fornecedor.telefone_2 or '-' }}</p>
+                        
+                        <h6 class="text-muted">Contato</h6>
+                        <p class="mb-3">{{ fornecedor.contato or '-' }}</p>
+                        
+                        <h6 class="text-muted">Categoria</h6>
+                        <p>{{ fornecedor.categoria or '-' }}</p>
+                    </div>
+                </div>
+                
+                {% if fornecedor.endereco %}
+                <h6 class="text-muted mt-3">Endereço</h6>
+                <p>{{ fornecedor.endereco }}, {{ fornecedor.cidade }}-{{ fornecedor.estado }} {{ fornecedor.cep }}</p>
+                {% endif %}
+                
+                {% if fornecedor.observacoes %}
+                <h6 class="text-muted mt-3">Observações</h6>
+                <p>{{ fornecedor.observacoes }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Resumo</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <small class="text-muted">Total de Compras</small>
+                    <h4 class="text-primary">{{ total_compras|format_currency }}</h4>
+                </div>
+                <div>
+                    <small class="text-muted">Compras este Ano</small>
+                    <h5>{{ compras_ano|format_currency }}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Histórico de Compras</h5>
+            </div>
+            <div class="card-body">
+                {% if compras %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Descrição</th>
+                                <th>Obra</th>
+                                <th class="text-end">Valor</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for compra in compras %}
+                            <tr>
+                                <td>{{ compra.data|format_date if compra.data else '-' }}</td>
+                                <td>{{ compra.descricao }}</td>
+                                <td>{{ compra.obra.nome if compra.obra else '-' }}</td>
+                                <td class="text-end">{{ compra.valor|format_currency }}</td>
+                                <td>
+                                    {% if compra.status == 'Pago' %}
+                                    <span class="badge bg-success">Pago</span>
+                                    {% elif compra.status == 'Pendente' %}
+                                    <span class="badge bg-warning">Pendente</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ compra.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if compra.status == 'Pendente' %}
+                                    <form method="POST" action="{{ url_for('fornecedores.pagar_compra', fornecedor_id=fornecedor.id, compra_id=compra.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-sm btn-success">Pagar</button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">Nenhuma compra registrada</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        {# Paginação #}
+        {{ renderizar_paginacao(paginacao, 'fornecedores.fornecedor_detalhe', {'fornecedor_id': fornecedor.id}) }}
+    </div>
+</div>
+{% endblock %}

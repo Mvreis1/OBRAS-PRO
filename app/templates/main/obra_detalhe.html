@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+
+{% block title %}{{ obra.nome }} - {{ nome_sistema }}{% endblock %}
+{% block page_title %}{{ obra.nome }}{% endblock %}
+
+{% block topbar_actions %}
+<div style="display: flex; gap: 10px;">
+    <a href="{{ url_for('main.obras') }}" class="btn btn-outline">
+        <i class="bi bi-arrow-left me-2"></i>Voltar
+    </a>
+    <a href="{{ url_for('main.editar_obra', obra_id=obra.id) }}" class="btn btn-outline">
+        <i class="bi bi-pencil me-2"></i>Editar
+    </a>
+    <div class="dropdown">
+        <button class="btn btn-outline dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="bi bi-download me-2"></i>Exportar
+        </button>
+        <ul class="dropdown-menu" style="background: var(--bg-secondary); border: 1px solid var(--border-subtle);">
+            <li>
+                <a class="dropdown-item" href="{{ url_for('main.exportar_obra', obra_id=obra.id) }}" style="color: var(--text-secondary);">
+                    <i class="bi bi-file-earmark-spreadsheet me-2"></i>Excel (CSV)
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item" href="{{ url_for('main.exportar_obra_pdf', obra_id=obra.id) }}" style="color: var(--text-secondary);">
+                    <i class="bi bi-file-earmark-pdf me-2"></i>Relatório PDF
+                </a>
+            </li>
+        </ul>
+    </div>
+    <a href="{{ url_for('main.novo_lancamento') }}?obra_id={{ obra.id }}" class="btn btn-success">
+        <i class="bi bi-plus-lg me-2"></i>Novo Lancamento
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Imagem da Obra -->
+{% if obra.imagem %}
+<div style="height: 250px; overflow: hidden; border-radius: 12px; margin-bottom: 20px;">
+    <img src="{{ obra.imagem }}" style="width: 100%; height: 100%; object-fit: cover;" alt="{{ obra.nome }}">
+</div>
+{% else %}
+<div style="height: 200px; background: var(--bg-tertiary); border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; flex-direction: column; border: 2px dashed var(--border-default);">
+    <i class="bi bi-image" style="font-size: 40px; color: var(--text-muted); margin-bottom: 10px;"></i>
+    <form method="POST" action="{{ url_for('main.upload_imagem_obra', obra_id=obra.id) }}" enctype="multipart/form-data" style="display: flex; gap: 10px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="file" name="imagem" accept="image/*" style="display: none;" id="imgInput" onchange="this.form.submit()">
+        <label for="imgInput" class="btn btn-outline btn-sm" style="cursor: pointer;">
+            <i class="bi bi-upload me-2"></i>Adicionar Foto
+        </label>
+    </form>
+</div>
+{% endif %}
+
+<!-- Info Principal -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div>
+                        <div style="margin-bottom: 10px;">
+                            {% if obra.status == 'Planejamento' %}
+                                <span class="badge badge-warning">{{ obra.status }}</span>
+                            {% elif obra.status == 'Em Execução' %}
+                                <span class="badge badge-primary">{{ obra.status }}</span>
+                            {% elif obra.status == 'Concluída' %}
+                                <span class="badge badge-success">{{ obra.status }}</span>
+                            {% else %}
+                                <span class="badge badge-danger">{{ obra.status }}</span>
+                            {% endif %}
+                        </div>
+                        <p style="color: var(--secondary); margin-bottom: 5px;">
+                            <i class="bi bi-geo-alt me-2"></i>{{ obra.endereco or 'Endereco nao cadastrado' }}
+                        </p>
+                        <p style="color: var(--secondary); margin-bottom: 5px;">
+                            <i class="bi bi-person me-2"></i>Cliente: {{ obra.cliente or 'Nao cadastrado' }}
+                        </p>
+                        <p style="color: var(--secondary); margin-bottom: 5px;">
+                            <i class="bi bi-person-badge me-2"></i>Responsavel: {{ obra.responsavel or 'Nao cadastrado' }}
+                        </p>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 12px; color: var(--secondary);">Orcamento Previsto</div>
+                        <div style="font-size: 28px; font-weight: 700; color: var(--primary);">{{ obra.orcamento_previsto|format_currency }}</div>
+                    </div>
+                </div>
+                
+                <hr style="margin: 20px 0;">
+                
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="flex: 1;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="font-size: 14px; color: var(--secondary);">Progresso da Obra</span>
+                            <span style="font-size: 14px; font-weight: 600;">{{ obra.progresso }}%</span>
+                        </div>
+                        <div class="progress" style="height: 12px;">
+                            <div class="progress-bar" role="progressbar" 
+                                 style="width: {{ obra.progresso }}%; background: {% if obra.progresso < 30 %}var(--danger){% elif obra.progresso < 70 %}var(--warning){% else %}var(--success){% endif %};">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-4">
+                        <div style="text-align: center; padding: 15px; background: var(--light); border-radius: 8px;">
+                            <div style="font-size: 12px; color: var(--secondary); margin-bottom: 5px;">Data Inicio</div>
+                            <div style="font-size: 16px; font-weight: 600;">{{ obra.data_inicio|format_date if obra.data_inicio else '-' }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div style="text-align: center; padding: 15px; background: var(--light); border-radius: 8px;">
+                            <div style="font-size: 12px; color: var(--secondary); margin-bottom: 5px;">Previsao Termino</div>
+                            <div style="font-size: 16px; font-weight: 600;">{{ obra.data_fim_prevista|format_date if obra.data_fim_prevista else '-' }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div style="text-align: center; padding: 15px; background: var(--light); border-radius: 8px;">
+                            <div style="font-size: 12px; color: var(--secondary); margin-bottom: 5px;">Data Conclusao</div>
+                            <div style="font-size: 16px; font-weight: 600;">{{ obra.data_fim_real|format_date if obra.data_fim_real else '-' }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="bi bi-cash-stack me-2"></i>Financeiro</h5>
+            </div>
+            <div class="card-body">
+                <div style="padding: 15px 0; border-bottom: 1px solid var(--border);">
+                    <div style="font-size: 13px; color: var(--secondary);">Total Receitas</div>
+                    <div style="font-size: 20px; font-weight: 700; color: var(--success);">{{ total_receitas|format_currency }}</div>
+                </div>
+                <div style="padding: 15px 0; border-bottom: 1px solid var(--border);">
+                    <div style="font-size: 13px; color: var(--secondary);">Total Despesas</div>
+                    <div style="font-size: 20px; font-weight: 700; color: var(--danger);">{{ total_despesas|format_currency }}</div>
+                </div>
+                <div style="padding: 15px 0;">
+                    <div style="font-size: 13px; color: var(--secondary);">Saldo</div>
+                    <div style="font-size: 20px; font-weight: 700; color: {% if total_receitas - total_despesas >= 0 %}var(--success){% else %}var(--danger){% endif %};">
+                        {{ (total_receitas - total_despesas)|format_currency }}
+                    </div>
+                </div>
+                
+                <!-- Barra comparacao -->
+                <div style="margin-top: 15px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px;">
+                        <span>Orcamento utilizado</span>
+                        <span>{{ dados_obra.percentual|int }}%</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: min({{ dados_obra.percentual }}, 100%); background: {% if dados_obra.percentual > 90 %}var(--danger){% elif dados_obra.percentual > 70 %}var(--warning){% else %}var(--success){% endif %};">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Grafico Pizza -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title"><i class="bi bi-pie-chart me-2"></i>Custos por Categoria</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="custosChart" height="200"></canvas>
+            </div>
+        </div>
+        
+        <!-- Grafico Planejado vs Realizado -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title"><i class="bi bi-bar-chart me-2"></i>Planejado vs Realizado</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="comparativoChart" height="180"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lancamentos -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title"><i class="bi bi-list-ul me-2"></i>Lancamentos</h5>
+        <a href="{{ url_for('main.novo_lancamento') }}?obra_id={{ obra.id }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg me-2"></i>Novo
+        </a>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Descricao</th>
+                    <th>Categoria</th>
+                    <th>Forma Pagto</th>
+                    <th>Tipo</th>
+                    <th style="text-align: right;">Valor</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lancamento in lancamentos %}
+                <tr>
+                    <td style="white-space: nowrap;">{{ lancamento.data|format_date }}</td>
+                    <td>{{ lancamento.descricao }}</td>
+                    <td>{{ lancamento.categoria }}</td>
+                    <td>{{ lancamento.forma_pagamento or '-' }}</td>
+                    <td>
+                        <span class="badge badge-{% if lancamento.tipo == 'Receita' %}success{% else %}danger{% endif %}">
+                            {{ lancamento.tipo }}
+                        </span>
+                    </td>
+                    <td style="text-align: right; font-weight: 600; color: {% if lancamento.tipo == 'Receita' %}var(--success){% else %}var(--danger){% endif %};">
+                        {% if lancamento.tipo == 'Receita' %}+{% else %}-{% endif %}{{ lancamento.valor|format_currency }}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">Nenhum lancamento nesta obra</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Grafico Pizza - Custos por Categoria
+    const custosCtx = document.getElementById('custosChart').getContext('2d');
+    new Chart(custosCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ categorias|map(attribute='0')|list|tojson }},
+            datasets: [{
+                data: {{ categorias|map(attribute='1')|list|tojson }},
+                backgroundColor: [
+                    '#6366f1', '#8b5cf6', '#a855f7', '#d946ef',
+                    '#f472b6', '#fb7185', '#f87171',
+                    '#22c55e', '#16a34a', '#10b981'
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '60%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 10,
+                        padding: 8,
+                        font: { size: 10 }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Grafico Comparativo Planejado vs Realizado
+    const comparativoCtx = document.getElementById('comparativoChart').getContext('2d');
+    const orcamento = {{ dados_obra.orcamento }};
+    const gasto = {{ dados_obra.gasto }};
+    const receita = {{ dados_obra.receita }};
+    const saldo = {{ dados_obra.saldo }};
+    
+    new Chart(comparativoCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Orçamento', 'Gasto Real', 'Receita', 'Saldo'],
+            datasets: [{
+                label: 'Valor (R$)',
+                data: [orcamento, gasto, receita, receita - gasto],
+                backgroundColor: [
+                    '#6366f1',  // Orçamento - Roxo
+                    gasto > orcamento ? '#ef4444' : '#22c55e',  // Gasto - Vermelho se passou, verde se OK
+                    '#22c55e',  // Receita - Verde
+                    saldo >= 0 ? '#22c55e' : '#ef4444'  // Saldo - Verde se positivo, vermelho se negativo
+                ],
+                borderRadius: 6,
+                borderSkipped: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'R$ ' + context.raw.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(255,255,255,0.1)'
+                    },
+                    ticks: {
+                        color: '#a1a1aa',
+                        callback: function(value) {
+                            return 'R$ ' + value.toLocaleString('pt-BR');
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#a1a1aa'
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block page_title %}Enviar Orçamento{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('orcamentos.orcamento_detalhe', orcamento_id=orcamento.id) }}" class="btn btn-outline">
+    <i class="bi bi-arrow-left"></i> Voltar
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Enviar Orçamento</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">Email do Cliente</label>
+                        <input type="email" name="email" class="form-control" value="{{ orcamento.cliente_email }}" required>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        O orçamento será marcados como "Enviado" após o envio.
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-envelope"></i> Confirmar Envio
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Resumo do Orçamento</h5>
+            </div>
+            <div class="card-body">
+                <h6>{{ orcamento.titulo }}</h6>
+                <p class="text-muted">{{ orcamento.cliente }}</p>
+                <h4 class="text-success">{{ orcamento.valor_total|format_currency }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}{% if lancamento %}Editar{% else %}Novo{% endif %} Lancamento - {{ nome_sistema }}{% endblock %}
+{% block page_title %}{% if lancamento %}Editar{% else %}Novo{% endif %} Lancamento{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="bi bi-{% if lancamento %}pencil{% else %}plus{% endif %}-circle me-2"></i>
+                    {% if lancamento %}Editar{% else %}Cadastrar{% endif %} Lancamento
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Obra *</label>
+                            <select name="obra_id" class="form-select" required>
+                                <option value="">Selecione uma obra</option>
+                                {% for obra in obras %}
+                                <option value="{{ obra.id }}" {% if lancamento and lancamento.obra_id == obra.id %}selected{% endif %}>
+                                    {{ obra.nome }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-8">
+                            <label class="form-label">Descricao *</label>
+                            <input type="text" name="descricao" class="form-control" required 
+                                   value="{{ lancamento.descricao if lancamento else '' }}"
+                                   placeholder="Ex: Compra de cimento">
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">Tipo *</label>
+                            <select name="tipo" class="form-select" required>
+                                <option value="Despesa" {% if lancamento and lancamento.tipo == 'Despesa' %}selected{% endif %}>Despesa</option>
+                                <option value="Receita" {% if lancamento and lancamento.tipo == 'Receita' %}selected{% endif %}>Receita</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">Categoria *</label>
+                            <select name="categoria" class="form-select" required>
+                                <option value="Mao de Obra" {% if lancamento and lancamento.categoria == 'Mao de Obra' %}selected{% endif %}>Mao de Obra</option>
+                                <option value="Material" {% if lancamento and lancamento.categoria == 'Material' %}selected{% endif %}>Material</option>
+                                <option value="Equipamento" {% if lancamento and lancamento.categoria == 'Equipamento' %}selected{% endif %}>Equipamento</option>
+                                <option value="Servico Terceiro" {% if lancamento and lancamento.categoria == 'Servico Terceiro' %}selected{% endif %}>Servico Terceiro</option>
+                                <option value="Imposto" {% if lancamento and lancamento.categoria == 'Imposto' %}selected{% endif %}>Imposto</option>
+                                <option value="Outros" {% if lancamento and lancamento.categoria == 'Outros' %}selected{% endif %}>Outros</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">Valor (R$) *</label>
+                            <input type="number" name="valor" class="form-control" step="0.01" min="0" required 
+                                   value="{{ lancamento.valor if lancamento else '' }}"
+                                   placeholder="0,00">
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">Data *</label>
+                            <input type="date" name="data" class="form-control" required 
+                                   value="{{ lancamento.data if lancamento else '' }}">
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">Forma de Pagamento</label>
+                            <select name="forma_pagamento" class="form-select">
+                                <option value="">Selecione</option>
+                                <option value="Dinheiro" {% if lancamento and lancamento.forma_pagamento == 'Dinheiro' %}selected{% endif %}>Dinheiro</option>
+                                <option value="Transferencia" {% if lancamento and lancamento.forma_pagamento == 'Transferencia' %}selected{% endif %}>Transferencia</option>
+                                <option value="Pix" {% if lancamento and lancamento.forma_pagamento == 'Pix' %}selected{% endif %}>Pix</option>
+                                <option value="Cheque" {% if lancamento and lancamento.forma_pagamento == 'Cheque' %}selected{% endif %}>Cheque</option>
+                                <option value="Cartao" {% if lancamento and lancamento.forma_pagamento == 'Cartao' %}selected{% endif %}>Cartao</option>
+                                <option value="Boleto" {% if lancamento and lancamento.forma_pagamento == 'Boleto' %}selected{% endif %}>Boleto</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">Status Pagamento</label>
+                            <select name="status_pagamento" class="form-select">
+                                <option value="Pago" {% if lancamento and lancamento.status_pagamento == 'Pago' %}selected{% endif %}>Pago</option>
+                                <option value="Pendente" {% if lancamento and lancamento.status_pagamento == 'Pendente' %}selected{% endif %}>Pendente</option>
+                                <option value="Parcial" {% if lancamento and lancamento.status_pagamento == 'Parcial' %}selected{% endif %}>Parcial</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">Parcelas</label>
+                            <input type="number" name="parcelas" class="form-control" min="1" max="36" 
+                                   value="{{ lancamento.parcelas if lancamento else 1 }}"
+                                   placeholder="1">
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Documento</label>
+                            <input type="text" name="documento" class="form-control" 
+                                   value="{{ lancamento.documento if lancamento else '' }}"
+                                   placeholder="NF, Recibo, etc.">
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Observacoes</label>
+                            <textarea name="observacoes" class="form-control" rows="2"
+                                      placeholder="Observacoes adicionais...">{{ lancamento.observacoes if lancamento else '' }}</textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-2"></i>Salvar
+                        </button>
+                        <a href="{{ url_for('main.lancamentos') }}" class="btn btn-outline">
+                            <i class="bi bi-x-lg me-2"></i>Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="bi bi-lightbulb me-2"></i>Dicas
+                </h5>
+            </div>
+            <div class="card-body" style="font-size: 13px; color: var(--text-secondary);">
+                <p><strong>Despesa:</strong> Custos como materiais, mao de obra, equipamentos.</p>
+                <p><strong>Receita:</strong> Pagamentos recebidos do cliente.</p>
+                <p><strong>Parcelas:</strong> Use para controlar pagamentos parcelados.</p>
+                <p><strong>Documento:</strong> Vincule notas fiscais ou recibos para controle.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

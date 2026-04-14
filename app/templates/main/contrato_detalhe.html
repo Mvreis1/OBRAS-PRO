@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block page_title %}Contrato: {{ contrato.titulo }}{% endblock %}
+
+{% block topbar_actions %}
+<div style="display: flex; gap: 10px;">
+    <a href="{{ url_for('contratos.contratos') }}" class="btn btn-outline">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+    <a href="{{ url_for('contratos.editar_contrato', contrato_id=contrato.id) }}" class="btn btn-outline">
+        <i class="bi bi-pencil"></i> Editar
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Dados do Contrato</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Cliente</h6>
+                        <p class="mb-3">{{ contrato.cliente }}</p>
+                        
+                        <h6 class="text-muted">CNPJ/CPF</h6>
+                        <p class="mb-3">{{ contrato.cliente_cnpj or '-' }}</p>
+                        
+                        <h6 class="text-muted">Email</h6>
+                        <p class="mb-3">{{ contrato.cliente_email or '-' }}</p>
+                        
+                        <h6 class="text-muted">Telefone</h6>
+                        <p>{{ contrato.cliente_telefone or '-' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Tipo</h6>
+                        <p class="mb-3">{{ contrato.tipo }}</p>
+                        
+                        <h6 class="text-muted">Status</h6>
+                        <p class="mb-3">
+                            {% if contrato.status == 'Ativo' %}
+                            <span class="badge bg-success">Ativo</span>
+                            {% elif contrato.status == 'Rascunho' %}
+                            <span class="badge bg-secondary">Rascunho</span>
+                            {% elif contrato.status == 'Encerrado' %}
+                            <span class="badge bg-info">Encerrado</span>
+                            {% else %}
+                            <span class="badge bg-warning">{{ contrato.status }}</span>
+                            {% endif %}
+                        </p>
+                        
+                        <h6 class="text-muted">Obra Vinculada</h6>
+                        <p class="mb-3">{{ contrato.obra.nome if contrato.obra else '-' }}</p>
+                    </div>
+                </div>
+                
+                {% if contrato.descricao %}
+                <h6 class="text-muted mt-3">Descrição</h6>
+                <p>{{ contrato.descricao }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Valores</h5>
+            </div>
+            <div class="card-body">
+                <h6 class="text-muted">Valor do Contrato</h6>
+                <h4 class="mb-3">{{ contrato.valor|format_currency }}</h4>
+                
+                <h6 class="text-muted">Aditivo</h6>
+                <h5 class="text-info mb-3">{{ contrato.valor_aditivo|format_currency }}</h5>
+                
+                <h6 class="text-muted">Total</h6>
+                <h4 class="text-success">{{ (contrato.valor + contrato.valor_aditivo)|format_currency }}</h4>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Prazos</h5>
+            </div>
+            <div class="card-body">
+                <h6 class="text-muted">Data de Início</h6>
+                <p class="mb-2">{{ contrato.data_inicio|format_date if contrato.data_inicio else '-' }}</p>
+                
+                <h6 class="text-muted">Data de Término</h6>
+                <p class="mb-2">{{ contrato.data_fim|format_date if contrato.data_fim else '-' }}</p>
+                
+                <h6 class="text-muted">Data de Assinatura</h6>
+                <p>{{ contrato.data_assinatura|format_date if contrato.data_assinatura else '-' }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Parcelas</h5>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#parcelaModal">
+                    <i class="bi bi-plus-lg"></i> Nova Parcela
+                </button>
+            </div>
+            <div class="card-body">
+                {% if parcelas %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Descrição</th>
+                                <th>Valor</th>
+                                <th>Vencimento</th>
+                                <th>Pagamento</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for parcela in parcelas %}
+                            <tr class="{% if parcela.status == 'Pendente' and parcela.data_vencimento < date.today() %}table-danger{% endif %}">
+                                <td>{{ parcela.numero }}</td>
+                                <td>{{ parcela.descricao or 'Parcela ' ~ parcela.numero }}</td>
+                                <td>{{ parcela.valor|format_currency }}</td>
+                                <td>{{ parcela.data_vencimento|format_date }}</td>
+                                <td>{{ parcela.data_pagamento|format_date if parcela.data_pagamento else '-' }}</td>
+                                <td>
+                                    {% if parcela.status == 'Pago' %}
+                                    <span class="badge bg-success">Pago</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">Pendente</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if parcela.status == 'Pendente' %}
+                                    <form method="POST" action="{{ url_for('contratos.pagar_parcela', parcela_id=parcela.id) }}" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            <i class="bi bi-check"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <th colspan="2">Total</th>
+                                <th>{{ (parcelas|sum(attribute='valor'))|format_currency }}</th>
+                                <th></th>
+                                <th>{{ total_pago|format_currency }}</th>
+                                <th></th>
+                                <th></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">Nenhuma parcela cadastrada</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="parcelaModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nova Parcela</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('contratos.nova_parcela', contrato_id=contrato.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Valor</label>
+                        <input type="number" name="valor" step="0.01" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Data de Vencimento</label>
+                        <input type="date" name="data_vencimento" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descrição</label>
+                        <input type="text" name="descricao" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Adicionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

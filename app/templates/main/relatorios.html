@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-graph-up"></i> Relatórios Avançados</h2>
+        <div>
+            <a href="{{ url_for('excel.exportar_relatorio_financeiro_excel') }}" class="btn btn-success me-2">
+                <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+            </a>
+            <a href="{{ url_for('main.exportar_relatorio_pdf') }}?data_inicio={{ data_inicio }}&data_fim={{ data_fim }}&obra_id={{ obra_id or '' }}" class="btn btn-outline" target="_blank">
+                <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs" id="relatorioTab" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active" id="lucro-tab" data-bs-toggle="tab" data-bs-target="#lucro" type="button">
+                                Lucro/Prejuízo
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" id="orcamento-tab" data-bs-toggle="tab" data-bs-target="#orcamento" type="button">
+                                Orçamento vs Real
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" id="resumo-tab" data-bs-toggle="tab" data-bs-target="#resumo" type="button">
+                                Resumo Geral
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <form method="GET" class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <label class="form-label">Data Início</label>
+                            <input type="date" name="data_inicio" class="form-control" value="{{ data_inicio }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Data Fim</label>
+                            <input type="date" name="data_fim" class="form-control" value="{{ data_fim }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Obra (opcional)</label>
+                            <select name="obra_id" class="form-select">
+                                <option value="">Todas as obras</option>
+                                {% for obra in obras %}
+                                <option value="{{ obra.id }}" {% if obra_id and obra_id == obra.id|string %}selected{% endif %}>{{ obra.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary d-block">
+                                <i class="bi bi-search"></i> Gerar
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="tab-content" id="relatorioTabContent">
+                        <div class="tab-pane fade show active" id="lucro" role="tabpanel">
+                            <h5 class="mb-3">Lucro/Prejuízo por Período</h5>
+                            <div class="row mb-4">
+                                <div class="col-md-4">
+                                    <div class="card bg-success bg-opacity-10">
+                                        <div class="card-body">
+                                            <h6 class="text-muted">Total Receitas</h6>
+                                            <h3 class="text-success">R$ {{ total_receitas|number_format(2) }}</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card bg-danger bg-opacity-10">
+                                        <div class="card-body">
+                                            <h6 class="text-muted">Total Despesas</h6>
+                                            <h3 class="text-danger">R$ {{ total_despesas|number_format(2) }}</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card {% if lucro_prejuizo >= 0 %}bg-success bg-opacity-10{% else %}bg-danger bg-opacity-10{% endif %}">
+                                        <div class="card-body">
+                                            <h6 class="text-muted">{% if lucro_prejuizo >= 0 %}Lucro{% else %}Prejuízo{% endif %}</h6>
+                                            <h3 class="{% if lucro_prejuizo >= 0 %}text-success{% else %}text-danger{% endif %}">R$ {{ lucro_prejuizo|number_format(2) }}</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h6 class="mb-2">Detalhamento por Obra</h6>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Obra</th>
+                                            <th class="text-end">Receitas</th>
+                                            <th class="text-end">Despesas</th>
+                                            <th class="text-end">Saldo</th>
+                                            <th class="text-end">Margem</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for dados in lucro_obras %}
+                                        <tr>
+                                            <td>{{ dados.obra.nome }}</td>
+                                            <td class="text-end text-success">R$ {{ dados.receita|number_format(2) }}</td>
+                                            <td class="text-end text-danger">R$ {{ dados.despesa|number_format(2) }}</td>
+                                            <td class="text-end {% if dados.saldo >= 0 %}text-success{% else %}text-danger{% endif %}">R$ {{ dados.saldo|number_format(2) }}</td>
+                                            <td class="text-end">
+                                                {% if dados.margem is not none %}
+                                                <span class="badge {% if dados.margem >= 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                                    {{ dados.margem|number_format(1) }}%
+                                                </span>
+                                                {% else %}
+                                                -
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="5" class="text-muted text-center">Nenhum lançamento no período</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot class="table-light">
+                                        <tr>
+                                            <th>TOTAL</th>
+                                            <th class="text-end text-success">R$ {{ total_receitas|number_format(2) }}</th>
+                                            <th class="text-end text-danger">R$ {{ total_despesas|number_format(2) }}</th>
+                                            <th class="text-end {% if lucro_prejuizo >= 0 %}text-success{% else %}text-danger{% endif %}">R$ {{ lucro_prejuizo|number_format(2) }}</th>
+                                            <th class="text-end">
+                                                {% if margem_geral is not none %}
+                                                <span class="badge {% if margem_geral >= 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                                    {{ margem_geral|number_format(1) }}%
+                                                </span>
+                                                {% else %}
+                                                -
+                                                {% endif %}
+                                            </th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+
+                            <h6 class="mb-2 mt-4">Evolução Mensal</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Mês</th>
+                                            <th class="text-end">Receitas</th>
+                                            <th class="text-end">Despesas</th>
+                                            <th class="text-end">Saldo</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for mes in evolucao_mensal %}
+                                        <tr>
+                                            <td>{{ mes.mes }}</td>
+                                            <td class="text-end text-success">R$ {{ mes.receita|number_format(2) }}</td>
+                                            <td class="text-end text-danger">R$ {{ mes.despesa|number_format(2) }}</td>
+                                            <td class="text-end {% if mes.saldo >= 0 %}text-success{% else %}text-danger{% endif %}">R$ {{ mes.saldo|number_format(2) }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="orcamento" role="tabpanel">
+                            <h5 class="mb-3">Comparação Orçamento vs Real</h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Obra</th>
+                                            <th class="text-end">Orçamento</th>
+                                            <th class="text-end">Realizado</th>
+                                            <th class="text-end">Diferença</th>
+                                            <th class="text-end">% Exec</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for dados in orcamento_obras %}
+                                        <tr>
+                                            <td>{{ dados.obra.nome }}</td>
+                                            <td class="text-end">R$ {{ dados.orcamento|number_format(2) }}</td>
+                                            <td class="text-end">R$ {{ dados.realizado|number_format(2) }}</td>
+                                            <td class="text-end {% if dados.diferenca >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                                R$ {{ dados.diferenca|number_format(2) }}
+                                            </td>
+                                            <td class="text-end">{{ dados.percentual|number_format(1) }}%</td>
+                                            <td>
+                                                {% if dados.percentual > 100 %}
+                                                <span class="badge bg-danger">Estourado</span>
+                                                {% elif dados.percentual > 90 %}
+                                                <span class="badge bg-warning text-dark">Perto do limite</span>
+                                                {% elif dados.percentual > 70 %}
+                                                <span class="badge bg-info text-dark">Em andamento</span>
+                                                {% else %}
+                                                <span class="badge bg-success">Ok</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="6" class="text-muted text-center">Nenhuma obra cadastrada</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot class="table-light">
+                                        <tr>
+                                            <th>TOTAL</th>
+                                            <th class="text-end">R$ {{ total_orcamento|number_format(2) }}</th>
+                                            <th class="text-end">R$ {{ total_realizado|number_format(2) }}</th>
+                                            <th class="text-end {% if diferenca_total >= 0 %}text-success{% else %}text-danger{% endif %}">R$ {{ diferenca_total|number_format(2) }}</th>
+                                            <th class="text-end">{{ percentual_geral|number_format(1) }}%</th>
+                                            <th></th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+
+                            <div class="row mt-4">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">Execução por Categoria</div>
+                                        <div class="card-body">
+                                            {% if categorias %}
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Categoria</th>
+                                                        <th class="text-end">Valor</th>
+                                                        <th class="text-end">%</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for cat in categorias %}
+                                                    <tr>
+                                                        <td>{{ cat.categoria }}</td>
+                                                        <td class="text-end">R$ {{ cat.valor|number_format(2) }}</td>
+                                                        <td class="text-end">{{ cat.percentual|number_format(1) }}%</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                            {% else %}
+                                            <p class="text-muted">Sem dados</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">Gráfico de Execução</div>
+                                        <div class="card-body">
+                                            <canvas id="graficoOrcamento"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="resumo" role="tabpanel">
+                            <h5 class="mb-3">Resumo Geral</h5>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <h1 class="display-4">{{ obras|length }}</h1>
+                                            <p class="text-muted">Obras Cadastradas</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <h1 class="display-4">{{ obras_ativas }}</h1>
+                                            <p class="text-muted">Em Execução</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <h1 class="display-4">{{ lancamentos_count }}</h1>
+                                            <p class="text-muted">Lançamentos</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <h1 class="display-4">{{ categorias_count }}</h1>
+                                            <p class="text-muted">Categorias Usadas</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mt-4">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">Obras por Status</div>
+                                        <div class="card-body">
+                                            {% for status in obras_por_status %}
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span>{{ status.status }}</span>
+                                                <span class="badge bg-primary">{{ status.qtd }}</span>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">Top 5 Maiores Despesas</div>
+                                        <div class="card-body">
+                                            {% for despesa in top_despesas %}
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <small>{{ despesa.descricao[:30] }}...</small>
+                                                <span class="text-danger">R$ {{ despesa.valor|number_format(2) }}</span>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const ctx = document.getElementById('graficoOrcamento');
+if (ctx) {
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ grafico_labels|tojson }},
+            datasets: [{
+                label: 'Orçamento',
+                data: {{ grafico_orcamento|tojson }},
+                backgroundColor: 'rgba(99, 102, 241, 0.5)',
+                borderColor: 'rgba(99, 102, 241, 1)',
+                borderWidth: 1
+            }, {
+                label: 'Realizado',
+                data: {{ grafico_realizado|tojson }},
+                backgroundColor: 'rgba(239, 68, 68, 0.5)',
+                borderColor: 'rgba(239, 68, 68, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

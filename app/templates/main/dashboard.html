@@ -1,0 +1,396 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - {{ nome_sistema }}{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Toggle para mostrar/esconder valores -->
+<div class="row mb-3">
+    <div class="col-12">
+        <button onclick="toggleValores()" class="btn btn-outline btn-sm" id="btnToggleValores" style="float: right;">
+            <i class="bi bi-eye-slash" id="iconToggleValores"></i> Esconder Valores
+        </button>
+    </div>
+</div>
+
+<style>
+    .valor-mascarado {
+        filter: blur(8px);
+        user-select: none;
+        transition: filter 0.3s ease;
+    }
+    .valor-mascarado.mostrar {
+        filter: none;
+    }
+</style>
+
+<script>
+function toggleValores() {
+    const valores = document.querySelectorAll('.valor-mascarado');
+    const btn = document.getElementById('btnToggleValores');
+    const icon = document.getElementById('iconToggleValores');
+    const escondido = btn.classList.contains('valores-escondidos');
+    
+    valores.forEach(v => {
+        if (escondido) {
+            v.classList.add('mostrar');
+        } else {
+            v.classList.remove('mostrar');
+        }
+    });
+    
+    if (escondido) {
+        btn.classList.remove('valores-escondidos');
+        icon.className = 'bi bi-eye-slash';
+        btn.innerHTML = '<i class="bi bi-eye-slash" id="iconToggleValores"></i> Esconder Valores';
+    } else {
+        btn.classList.add('valores-escondidos');
+        icon.className = 'bi bi-eye';
+        btn.innerHTML = '<i class="bi bi-eye" id="iconToggleValores"></i> Mostrar Valores';
+    }
+}
+</script>
+
+<!-- Alertas Inteligentes -->
+{% if alertas %}
+<div class="row mb-4">
+    {% if alertas_criticos %}
+    <div class="col-12">
+        <div class="alert" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px;">
+            <i class="bi bi-exclamation-octagon-fill" style="font-size: 20px; color: #ef4444;"></i>
+            <div style="flex: 1;">
+                <div style="font-weight: 600; color: #f87171; margin-bottom: 4px;">ATENÇÃO: Obras com Risco Crítico</div>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    {% for a in alertas_criticos %}
+                    <a href="{{ url_for('main.obra_detalhe', obra_id=a.obra_id) }}" style="color: #fca5a5; text-decoration: none;">
+                        <i class="bi bi-arrow-right-short"></i>{{ a.obra_nome }} - {{ a.mensagem }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if alertas_alertas %}
+    <div class="col-12">
+        <div class="alert" style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 10px;">
+            <i class="bi bi-exclamation-triangle-fill" style="font-size: 20px; color: #fbbf24;"></i>
+            <div style="flex: 1;">
+                <div style="font-weight: 600; color: #fbbf24; margin-bottom: 4px;">Alertas</div>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    {% for a in alertas_alertas %}
+                    <a href="{{ url_for('main.obra_detalhe', obra_id=a.obra_id) }}" style="color: #fcd34d; text-decoration: none;">
+                        <i class="bi bi-arrow-right-short"></i>{{ a.obra_nome }} - {{ a.mensagem }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Stats Cards -->
+<div class="row mb-4 g-3">
+    <div class="col-md-3">
+        <div class="stat-card" style="border-left: 3px solid #818cf8;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Orcamento Total</div>
+                    <div class="stat-value" style="font-size: 22px;">{{ orcamento_total|format_currency }}</div>
+                    <div class="stat-trend up">
+                        <i class="bi bi-building"></i> 5 obras ativas
+                    </div>
+                </div>
+                <div class="stat-icon primary">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card" style="border-left: 3px solid #f87171;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Despesas do Mes</div>
+                    <div class="stat-value" style="font-size: 22px;">{{ despesas_mes|format_currency }}</div>
+                    <div class="stat-trend down">
+                        <i class="bi bi-arrow-up"></i> +12% vs mes anterior
+                    </div>
+                </div>
+                <div class="stat-icon danger">
+                    <i class="bi bi-arrow-down-circle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card" style="border-left: 3px solid #4ade80;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Receitas do Mes</div>
+                    <div class="stat-value" style="font-size: 22px; color: #4ade80;">{{ receitas_mes|format_currency }}</div>
+                    <div class="stat-trend up">
+                        <i class="bi bi-arrow-up"></i> +8% vs mes anterior
+                    </div>
+                </div>
+                <div class="stat-icon success">
+                    <i class="bi bi-arrow-up-circle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card" style="border-left: 3px solid {% if saldo_atual >= 0 %}#4ade80{% else %}#f87171{% endif %};">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Saldo Atual</div>
+                    <div class="stat-value" style="font-size: 22px; color: {% if saldo_atual >= 0 %}#4ade80{% else %}#f87171{% endif %};">
+                        {{ saldo_atual|format_currency }}
+                    </div>
+                    <div class="stat-trend {% if saldo_atual >= 0 %}up{% else %}down{% endif %}">
+                        {% if saldo_atual >= 0 %}
+                        <i class="bi bi-check-circle"></i> Saldo positivo
+                        {% else %}
+                        <i class="bi bi-exclamation-triangle"></i> Atencao
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="stat-icon {% if saldo_atual >= 0 %}success{% else %}danger{% endif %}">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4 g-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="bi bi-bar-chart-line me-2"></i>Fluxo de Caixa</h5>
+                <div style="display: flex; gap: 12px;">
+                    <span style="font-size: 12px; color: var(--text-muted);"><i class="bi bi-circle-fill" style="color: #4ade80; font-size: 8px;"></i> Receitas</span>
+                    <span style="font-size: 12px; color: var(--text-muted);"><i class="bi bi-circle-fill" style="color: #f87171; font-size: 8px;"></i> Despesas</span>
+                </div>
+            </div>
+            <div class="card-body" style="height: 280px;">
+                <canvas id="fluxoCaixaChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="bi bi-pie-chart me-2"></i>Despesas por Categoria</h5>
+            </div>
+            <div class="card-body" style="height: 280px;">
+                <canvas id="categoriaChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Transactions & Works -->
+<div class="row g-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="bi bi-clock-history me-2"></i>Lancamentos Recentes</h5>
+                <a href="{{ url_for('main.lancamentos') }}" class="btn btn-outline btn-sm">Ver Todos</a>
+            </div>
+            <div class="card-body" style="padding: 0;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Descricao</th>
+                            <th>Obra</th>
+                            <th>Categoria</th>
+                            <th>Tipo</th>
+                            <th style="text-align: right;">Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lancamento in ultimos_lancamentos %}
+                        <tr>
+                            <td style="white-space: nowrap; font-size: 12px;">{{ lancamento.data|format_date }}</td>
+                            <td style="font-weight: 500;">{{ lancamento.descricao }}</td>
+                            <td><span class="badge badge-primary" style="font-size: 10px;">{{ lancamento.obra.nome[:12] if lancamento.obra else 'N/A' }}</span></td>
+                            <td style="font-size: 12px; color: var(--text-muted);">{{ lancamento.categoria }}</td>
+                            <td>
+                                <span class="badge badge-{% if lancamento.tipo == 'Receita' %}success{% else %}danger{% endif %}" style="font-size: 10px;">
+                                    {{ lancamento.tipo }}
+                                </span>
+                            </td>
+                            <td style="text-align: right; font-weight: 600; color: {% if lancamento.tipo == 'Receita' %}#4ade80{% else %}#f87171{% endif %}; font-size: 12px;">
+                                {% if lancamento.tipo == 'Receita' %}+{% else %}-{% endif %}{{ lancamento.valor|format_currency }}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4" style="color: var(--text-muted);">Nenhum lancamento encontrado</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Works Progress -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title"><i class="bi bi-building me-2"></i>Obras em Andamento</h5>
+            </div>
+            <div class="card-body">
+                {% for obra in obras[:5] %}
+                <div style="padding: 12px 0; border-bottom: 1px solid var(--border-subtle);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-weight: 600; font-size: 13px;">{{ obra.nome[:20] }}</span>
+                        <span class="badge badge-{% if obra.status == 'Em Execução' %}primary{% elif obra.status == 'Concluída' %}success{% else %}warning{% endif %}" style="font-size: 9px;">
+                            {{ obra.progresso }}%
+                        </span>
+                    </div>
+                    <div class="progress" style="height: 4px;">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {{ obra.progresso }}%; background: {% if obra.progresso < 30 %}#f87171{% elif obra.progresso < 70 %}#fbbf24{% else %}#4ade80{% endif %};">
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; color: var(--text-muted);">
+                        <span>{{ obra.status }}</span>
+                        <span>{{ obra.orcamento_previsto|format_currency }}</span>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-center" style="color: var(--text-muted);">Nenhuma obra encontrada</p>
+                {% endfor %}
+                
+                <a href="{{ url_for('main.obras') }}" class="btn btn-outline w-100 mt-3" style="justify-content: center;">
+                    <i class="bi bi-arrow-right me-2"></i>Ver todas as obras
+                </a>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="bi bi-lightning me-2"></i>Acoes Rapidas</h5>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <a href="{{ url_for('main.nova_obra') }}" class="btn btn-primary btn-sm" style="justify-content: center;">
+                        <i class="bi bi-plus-lg me-1"></i> Nova Obra
+                    </a>
+                    <a href="{{ url_for('main.novo_lancamento') }}" class="btn btn-success btn-sm" style="justify-content: center;">
+                        <i class="bi bi-plus-lg me-1"></i> Lancamento
+                    </a>
+                    <a href="{{ url_for('banco.bancos') }}" class="btn btn-outline btn-sm" style="justify-content: center;">
+                        <i class="bi bi-bank me-1"></i> Bancos
+                    </a>
+                    <a href="{{ url_for('ia.assistente') }}" class="btn btn-outline btn-sm" style="justify-content: center;">
+                        <i class="bi bi-robot me-1"></i> IA
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const fluxoCaixaCtx = document.getElementById('fluxoCaixaChart').getContext('2d');
+    new Chart(fluxoCaixaCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ dados_grafico_mes|map(attribute='mes')|list|tojson }},
+            datasets: [{
+                label: 'Receitas',
+                data: {{ dados_grafico_mes|map(attribute='receita')|list|tojson }},
+                backgroundColor: '#4ade80',
+                borderRadius: 4,
+                borderSkipped: false
+            }, {
+                label: 'Despesas',
+                data: {{ dados_grafico_mes|map(attribute='despesa')|list|tojson }},
+                backgroundColor: '#f87171',
+                borderRadius: 4,
+                borderSkipped: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': R$ ' + context.raw.toLocaleString('pt-BR');
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: '#27272a' },
+                    ticks: {
+                        color: '#71717a',
+                        callback: function(value) {
+                            return 'R$ ' + (value / 1000).toFixed(0) + 'k';
+                        }
+                    }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#71717a' }
+                }
+            }
+        }
+    });
+
+    const categoriaCtx = document.getElementById('categoriaChart').getContext('2d');
+    new Chart(categoriaCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ dados_pizza|map(attribute='categoria')|list|tojson }},
+            datasets: [{
+                data: {{ dados_pizza|map(attribute='valor')|list|tojson }},
+                backgroundColor: [
+                    '#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe',
+                    '#f87171', '#fca5a5', '#fecaca',
+                    '#4ade80', '#86efac', '#bbf7d0'
+                ],
+                borderWidth: 0,
+                hoverOffset: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: '#71717a',
+                        boxWidth: 10,
+                        padding: 10,
+                        font: { size: 10 }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

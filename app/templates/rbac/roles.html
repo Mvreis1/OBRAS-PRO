@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Perfis de Acesso - {{ nome_sistema }}{% endblock %}
+{% block page_title %}Perfis de Acesso{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('rbac.novo_role') }}" class="btn btn-primary">
+    <i class="bi bi-plus-lg me-2"></i>Novo Perfil
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    {% for role in roles %}
+    <div class="col-md-6 col-xl-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h5 class="mb-1">
+                            {% if role.is_system %}
+                                <i class="bi bi-shield-check text-primary me-1"></i>
+                            {% endif %}
+                            {{ role.nome }}
+                        </h5>
+                        <p class="text-muted small mb-0">{{ role.descricao or 'Sem descrição' }}</p>
+                    </div>
+                    {% if role.is_system %}
+                        <span class="badge badge-primary">Sistema</span>
+                    {% else %}
+                        <span class="badge badge-success">Personalizado</span>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-muted">Permissões ({{ role.permissoes|length }})</small>
+                    <div class="mt-2" style="max-height: 120px; overflow-y: auto;">
+                        {% for perm in role.permissoes[:10] %}
+                        <span class="badge badge-primary me-1 mb-1" style="font-size: 10px;">
+                            {{ perm.modulo }}:{{ perm.acao }}
+                        </span>
+                        {% endfor %}
+                        {% if role.permissoes|length > 10 %}
+                        <span class="badge badge-warning" style="font-size: 10px;">+{{ role.permissoes|length - 10 }} mais</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    {% if not role.is_system %}
+                    <a href="{{ url_for('rbac.editar_role', role_id=role.id) }}" class="btn btn-outline btn-sm flex-grow-1">
+                        <i class="bi bi-pencil me-1"></i>Editar
+                    </a>
+                    <form method="POST" action="{{ url_for('rbac.excluir_role', role_id=role.id) }}" class="flex-grow-1" onsubmit="return confirm('Tem certeza que deseja excluir este perfil?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-outline btn-sm w-100" style="color: var(--danger); border-color: var(--danger);">
+                            <i class="bi bi-trash me-1"></i>Excluir
+                        </button>
+                    </form>
+                    {% else %}
+                    <a href="{{ url_for('rbac.editar_role', role_id=role.id) }}" class="btn btn-outline btn-sm flex-grow-1">
+                        <i class="bi bi-eye me-1"></i>Ver Permissões
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-shield-x" style="font-size: 48px; color: var(--text-muted);"></i>
+                <h5 class="mt-3">Nenhum perfil cadastrado</h5>
+                <p class="text-muted">Crie perfis de acesso para gerenciar permissões dos usuários</p>
+                <a href="{{ url_for('rbac.novo_role') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-2"></i>Criar Primeiro Perfil
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

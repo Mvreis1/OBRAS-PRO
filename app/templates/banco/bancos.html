@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% from "macros/paginacao.html" import renderizar_paginacao %}
+
+{% block title %}Contas Bancarias - {{ nome_sistema }}{% endblock %}
+{% block page_title %}Contas Bancarias{% endblock %}
+
+{% block topbar_actions %}
+<div style="display: flex; gap: 10px;">
+    <a href="{{ url_for('banco.transferencia') }}" class="btn btn-outline">
+        <i class="bi bi-arrow-left-right me-2"></i>Transferencia
+    </a>
+    <a href="{{ url_for('banco.novo_banco') }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-2"></i>Nova Conta
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    {% for conta in contas %}
+    <div class="col-md-4">
+        <div class="card" style="margin-bottom: 20px;">
+            <div class="card-body">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                    <div>
+                        <h5 style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">
+                            <i class="bi bi-bank me-2"></i>{{ conta.nome }}
+                        </h5>
+                        <div style="font-size: 13px; color: var(--secondary);">
+                            {{ conta.banco }} - {{ conta.agencia }}/{{ conta.conta }}
+                        </div>
+                    </div>
+                    <span class="badge badge-primary">{{ conta.tipo }}</span>
+                </div>
+                
+                <div style="text-align: center; padding: 20px 0; border-top: 1px solid var(--border);">
+                    <div style="font-size: 13px; color: var(--secondary); margin-bottom: 5px;">Saldo Atual</div>
+                    <div style="font-size: 28px; font-weight: 700; color: {% if conta.saldo_atual >= 0 %}var(--success){% else %}var(--danger){% endif %};">
+                        {{ conta.saldo_atual|format_currency }}
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <a href="{{ url_for('banco.banco_detalhe', conta_id=conta.id) }}" class="btn btn-primary btn-sm" style="flex: 1;">
+                        <i class="bi bi-eye me-1"></i> Ver Extrato
+                    </a>
+                    <a href="{{ url_for('banco.novo_lancamento_conta', conta_id=conta.id) }}" class="btn btn-success btn-sm" style="flex: 1;">
+                        <i class="bi bi-plus-lg me-1"></i> Lancamento
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body" style="text-align: center; padding: 50px;">
+                <i class="bi bi-bank" style="font-size: 48px; color: var(--secondary); margin-bottom: 20px; display: block;"></i>
+                <h5 style="margin-bottom: 10px;">Nenhuma conta cadastrada</h5>
+                <p style="color: var(--secondary); margin-bottom: 20px;">Cadastre uma conta bancaria para comecar</p>
+                <a href="{{ url_for('banco.novo_banco') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-2"></i>Cadastrar Conta
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{# Paginação #}
+{{ renderizar_paginacao(paginacao, 'banco.bancos', {}) }}
+{% endblock %}

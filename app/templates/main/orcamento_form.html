@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block page_title %}{% if orcamento %}Editar{% else %}Novo{% endif %} Orçamento{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('orcamentos.orcamentos') }}" class="btn btn-outline">
+    <i class="bi bi-arrow-left"></i> Voltar
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Dados do Orçamento</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <h5 class="mb-3">Dados do Cliente</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Cliente *</label>
+                                <input type="text" name="cliente" class="form-control" value="{{ orcamento.cliente if orcamento else '' }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="cliente_email" class="form-control" value="{{ orcamento.cliente_email if orcamento else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Telefone</label>
+                                <input type="text" name="cliente_telefone" class="form-control" value="{{ orcamento.cliente_telefone if orcamento else '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Endereço</label>
+                                <input type="text" name="cliente_endereco" class="form-control" value="{{ orcamento.cliente_endereco if orcamento else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h5 class="mt-4 mb-3">Dados do Orçamento</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label class="form-label">Título *</label>
+                                <input type="text" name="titulo" class="form-control" value="{{ orcamento.titulo if orcamento else '' }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Descrição</label>
+                        <textarea name="descricao" class="form-control" rows="3">{{ orcamento.descricao if orcamento else '' }}</textarea>
+                    </div>
+                    
+                    <h5 class="mt-4 mb-3">Valores</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label class="form-label">Materiais</label>
+                                <input type="number" name="valor_materiais" step="0.01" class="form-control" value="{{ orcamento.valor_materiais if orcamento else '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label class="form-label">Mão de Obra</label>
+                                <input type="number" name="valor_mao_obra" step="0.01" class="form-control" value="{{ orcamento.valor_mao_obra if orcamento else '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label class="form-label">Equipamentos</label>
+                                <input type="number" name="valor_equipamentos" step="0.01" class="form-control" value="{{ orcamento.valor_equipamentos if orcamento else '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label class="form-label">Outros</label>
+                                <input type="number" name="valor_outros" step="0.01" class="form-control" value="{{ orcamento.valor_outros if orcamento else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Desconto</label>
+                                <input type="number" name="desconto" step="0.01" class="form-control" value="{{ orcamento.desconto if orcamento else '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Prazo Execução (dias)</label>
+                                <input type="number" name="prazo_execucao" class="form-control" value="{{ orcamento.prazo_execucao if orcamento else '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Validade (dias)</label>
+                                <input type="number" name="validade" class="form-control" value="{{ orcamento.validade if orcamento else 30 }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Forma de Pagamento</label>
+                        <input type="text" name="forma_pagamento" class="form-control" value="{{ orcamento.forma_pagamento if orcamento else '' }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select">
+                            <option value="Rascunho" {% if orcamento and orcamento.status == 'Rascunho' %}selected{% endif %}>Rascunho</option>
+                            <option value="Enviado" {% if orcamento and orcamento.status == 'Enviado' %}selected{% endif %}>Enviado</option>
+                            <option value="Aprovado" {% if orcamento and orcamento.status == 'Aprovado' %}selected{% endif %}>Aprovado</option>
+                            <option value="Reprovado" {% if orcamento and orcamento.status == 'Reprovado' %}selected{% endif %}>Reprovado</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Observações</label>
+                        <textarea name="observacoes" class="form-control" rows="2">{{ orcamento.observacoes if orcamento else '' }}</textarea>
+                    </div>
+                    
+                    <input type="hidden" name="itens_json" id="itens_json">
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Salvar
+                        </button>
+                        <a href="{{ url_for('orcamentos.orcamentos') }}" class="btn btn-outline">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Itens</h5>
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#itemModal">
+                    <i class="bi bi-plus-lg"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="lista_itens">
+                    {% if orcamento and orcamento.itens %}
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Descrição</th>
+                                <th>Qtd</th>
+                                <th>Valor</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in orcamento.itens %}
+                            <tr>
+                                <td>{{ item.descricao }}</td>
+                                <td>{{ item.quantidade }} {{ item.unidade }}</td>
+                                <td>{{ item.valor_total|format_currency }}</td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('orcamentos.excluir_item', item_id=item.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-sm btn-danger">×</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted">Nenhum item adicionado</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+<div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Itens</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">Salve o orçamento primeiro para adicionar itens detalhados.</p>
+            </div>
+        </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Materiais:</span>
+                    <span>{{ (orcamento.valor_materiais or 0)|format_currency }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Mão de Obra:</span>
+                    <span>{{ (orcamento.valor_mao_obra or 0)|format_currency }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Equipamentos:</span>
+                    <span>{{ (orcamento.valor_equipamentos or 0)|format_currency }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Outros:</span>
+                    <span>{{ (orcamento.valor_outros or 0)|format_currency }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal:</span>
+                    <span>{{ ((orcamento.valor_materiais or 0) + (orcamento.valor_mao_obra or 0) + (orcamento.valor_equipamentos or 0) + (orcamento.valor_outros or 0))|format_currency }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2 text-danger">
+                    <span>Desconto:</span>
+                    <span>-{{ (orcamento.desconto or 0)|format_currency }}</span>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <strong>Total:</strong>
+                    <strong class="text-success h5">{{ (orcamento.valor_total if orcamento else 0)|format_currency }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

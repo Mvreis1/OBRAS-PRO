@@ -1,0 +1,97 @@
+{# Macro de paginação reutilizável - OBRAS PRO #}
+{% macro renderizar_paginacao(paginacao, endpoint, args=None) %}
+{% if paginacao and paginacao.pages > 1 %}
+<nav aria-label="Paginação" class="mt-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <!-- Info -->
+        <div class="text-muted" style="font-size: 13px;">
+            {% set inicio = ((paginacao.page - 1) * paginacao.per_page) + 1 %}
+            {% set fim = ((paginacao.page - 1) * paginacao.per_page) + paginacao.items|length %}
+            Mostrando {{ inicio }}-{{ fim }} de {{ paginacao.total }} registros
+        </div>
+        
+        <!-- Pagination Controls -->
+        <ul class="pagination mb-0" style="gap: 4px;">
+            <!-- First -->
+            {% if paginacao.page > 1 %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for(endpoint, page=1, **(args or {})) }}" 
+                   style="background: var(--bg-secondary); border: 1px solid var(--border-subtle); color: var(--text-secondary); border-radius: 6px; padding: 6px 10px;">
+                    <i class="bi bi-chevron-double-left"></i>
+                </a>
+            </li>
+            {% endif %}
+            
+            <!-- Previous -->
+            {% if paginacao.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for(endpoint, page=paginacao.prev_num, **(args or {})) }}" 
+                   style="background: var(--bg-secondary); border: 1px solid var(--border-subtle); color: var(--text-secondary); border-radius: 6px; padding: 6px 10px;">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+            
+            <!-- Page Numbers -->
+            {% for num in paginacao.iter_pages(left_edge=1, left_current=2, right_current=3, right_edge=1) %}
+                {% if num %}
+                    {% if num == paginacao.page %}
+                    <li class="page-item active">
+                        <span class="page-link" style="background: var(--accent-primary); border: 1px solid var(--accent-primary); color: white; border-radius: 6px; padding: 6px 10px;">
+                            {{ num }}
+                        </span>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for(endpoint, page=num, **(args or {})) }}" 
+                           style="background: var(--bg-secondary); border: 1px solid var(--border-subtle); color: var(--text-secondary); border-radius: 6px; padding: 6px 10px;">
+                            {{ num }}
+                        </a>
+                    </li>
+                    {% endif %}
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link" style="background: transparent; border: none; color: var(--text-muted); padding: 6px 10px;">
+                            …
+                        </span>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            <!-- Next -->
+            {% if paginacao.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for(endpoint, page=paginacao.next_num, **(args or {})) }}" 
+                   style="background: var(--bg-secondary); border: 1px solid var(--border-subtle); color: var(--text-secondary); border-radius: 6px; padding: 6px 10px;">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+            
+            <!-- Last -->
+            {% if paginacao.page < paginacao.pages %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for(endpoint, page=paginacao.pages, **(args or {})) }}" 
+                   style="background: var(--bg-secondary); border: 1px solid var(--border-subtle); color: var(--text-secondary); border-radius: 6px; padding: 6px 10px;">
+                    <i class="bi bi-chevron-double-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+        
+        <!-- Per Page Selector -->
+        <div class="d-flex align-items-center gap-2" style="font-size: 13px;">
+            <span class="text-muted">Por página:</span>
+            <select class="form-select form-select-sm" 
+                    onchange="window.location.href='{{ url_for(endpoint, **(args or {})) }}&per_page=' + this.value"
+                    style="width: auto; background: var(--bg-secondary); border: 1px solid var(--border-subtle); color: var(--text-primary);">
+                <option value="10" {% if paginacao.per_page == 10 %}selected{% endif %}>10</option>
+                <option value="20" {% if paginacao.per_page == 20 %}selected{% endif %}>20</option>
+                <option value="50" {% if paginacao.per_page == 50 %}selected{% endif %}>50</option>
+                <option value="100" {% if paginacao.per_page == 100 %}selected{% endif %}>100</option>
+            </select>
+        </div>
+    </div>
+</nav>
+{% endif %}
+{% endmacro %}

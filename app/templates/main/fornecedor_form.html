@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block page_title %}{% if fornecedor %}Editar{% else %}Novo{% endif %} Fornecedor{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('fornecedores.fornecedores') }}" class="btn btn-outline">
+    <i class="bi bi-arrow-left"></i> Voltar
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Dados do Fornecedor</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Nome Fantasia *</label>
+                                <input type="text" name="nome" class="form-control" value="{{ fornecedor.nome if fornecedor else '' }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Razão Social</label>
+                                <input type="text" name="razao_social" class="form-control" value="{{ fornecedor.razao_social if fornecedor else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">CNPJ</label>
+                                <input type="text" name="cnpj" class="form-control" value="{{ fornecedor.cnpj if fornecedor else '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">CPF</label>
+                                <input type="text" name="cpf" class="form-control" value="{{ fornecedor.cpf if fornecedor else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="email" class="form-control" value="{{ fornecedor.email if fornecedor else '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Telefone</label>
+                                <input type="text" name="telefone" class="form-control" value="{{ fornecedor.telefone if fornecedor else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Telefone 2</label>
+                                <input type="text" name="telefone_2" class="form-control" value="{{ fornecedor.telefone_2 if fornecedor else '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Contato</label>
+                                <input type="text" name="contato" class="form-control" value="{{ fornecedor.contato if fornecedor else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h5 class="mt-4 mb-3">Endereço</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label class="form-label">Endereço</label>
+                                <input type="text" name="endereco" class="form-control" value="{{ fornecedor.endereco if fornecedor else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="mb-3">
+                                <label class="form-label">Cidade</label>
+                                <input type="text" name="cidade" class="form-control" value="{{ fornecedor.cidade if fornecedor else '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="mb-3">
+                                <label class="form-label">Estado</label>
+                                <input type="text" name="estado" class="form-control" maxlength="2" value="{{ fornecedor.estado if fornecedor else '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="mb-3">
+                                <label class="form-label">CEP</label>
+                                <input type="text" name="cep" class="form-control" value="{{ fornecedor.cep if fornecedor else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h5 class="mt-4 mb-3">Outras Informações</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Categoria</label>
+                                <select name="categoria" class="form-select">
+                                    <option value="">Selecione</option>
+                                    <option value="Materiais de Construção" {% if fornecedor and fornecedor.categoria == 'Materiais de Construção' %}selected{% endif %}>Materiais de Construção</option>
+                                    <option value="Elétrica" {% if fornecedor and fornecedor.categoria == 'Elétrica' %}selected{% endif %}>Elétrica</option>
+                                    <option value="Hidráulica" {% if fornecedor and fornecedor.categoria == 'Hidráulica' %}selected{% endif %}>Hidráulica</option>
+                                    <option value="Ferramentas" {% if fornecedor and fornecedor.categoria == 'Ferramentas' %}selected{% endif %}>Ferramentas</option>
+                                    <option value="EPIs" {% if fornecedor and fornecedor.categoria == 'EPIs' %}selected{% endif %}>EPIs</option>
+                                    <option value="Locação de Equipamentos" {% if fornecedor and fornecedor.categoria == 'Locação de Equipamentos' %}selected{% endif %}>Locação de Equipamentos</option>
+                                    <option value="Serviços" {% if fornecedor and fornecedor.categoria == 'Serviços' %}selected{% endif %}>Serviços</option>
+                                    <option value="Outros" {% if fornecedor and fornecedor.categoria == 'Outros' %}selected{% endif %}>Outros</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Observações</label>
+                        <textarea name="observacoes" class="form-control" rows="3">{{ fornecedor.observacoes if fornecedor else '' }}</textarea>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Salvar
+                        </button>
+                        <a href="{{ url_for('fornecedores.fornecedores') }}" class="btn btn-outline">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Dicas</h5>
+            </div>
+            <div class="card-body">
+                <ul class="small text-muted">
+                    <li class="mb-2">Fornecedores são usados para rastrear compras</li>
+                    <li class="mb-2">O histórico ajuda na tomada de decisão</li>
+                    <li>Você pode registrar compras e pagamentos</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

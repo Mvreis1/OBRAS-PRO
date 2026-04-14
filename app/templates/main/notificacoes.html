@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% from "macros/paginacao.html" import renderizar_paginacao %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-bell"></i> Notificações</h2>
+        <div>
+            <a href="{{ url_for('notificacoes.api_gerar_alertas') }}" class="btn btn-outline btn-sm me-2">
+                <i class="bi bi-arrow-repeat"></i> Atualizar
+            </a>
+            <a href="{{ url_for('notificacoes.marcar_todas_lida') }}" class="btn btn-outline btn-sm">
+                <i class="bi bi-check-all"></i> Marcar todas como lidas
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body p-0">
+                    {% if notificacoes %}
+                    <div class="list-group list-group-flush">
+                        {% for notif in notificacoes %}
+                        <div class="list-group-item {% if not notif.lida %}bg-light{% endif %} d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="d-flex align-items-center">
+                                    {% if notif.tipo == 'orcamento_estourado' %}
+                                    <i class="bi bi-exclamation-triangle text-danger me-2"></i>
+                                    {% elif notif.tipo == 'obra_atrasada' %}
+                                    <i class="bi bi-clock text-warning me-2"></i>
+                                    {% elif notif.tipo == 'pagamento_atrasado' %}
+                                    <i class="bi bi-currency-dollar text-danger me-2"></i>
+                                    {% else %}
+                                    <i class="bi bi-bell text-primary me-2"></i>
+                                    {% endif %}
+                                    <div>
+                                        <div class="fw-medium {% if not notif.lida %}fw-bold{% endif %}">{{ notif.titulo }}</div>
+                                        <small class="text-muted">{{ notif.mensagem }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted">{{ notif.created_at.strftime('%d/%m %H:%M') }}</small>
+                                {% if not notif.lida %}
+                                <br>
+                                <a href="{{ url_for('notificacoes.marcar_lida', notif_id=notif.id) }}" class="badge bg-secondary text-decoration-none">Marcar lida</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-bell-slash" style="font-size: 3rem;"></i>
+                        <p class="mt-2">Nenhuma notificação</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-gear"></i> Configurações de Email</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Configure o email para receber alertasautomaticamente.</p>
+                    <a href="{{ url_for('notificacoes.config_email') }}" class="btn btn-primary">
+                        <i class="bi bi-envelope"></i> Configurar Email
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Paginação #}
+    {{ renderizar_paginacao(paginacao, 'notificacoes.notificacoes', {}) }}
+</div>
+{% endblock %}

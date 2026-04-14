@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Configurar 2FA - {{ nome_sistema }}{% endblock %}
+{% block page_title %}Autenticação em Duas Etapas{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-shield-check me-2"></i>
+                    {% if usuario.two_factor_enabled %}
+                        2FA Habilitado
+                    {% else %}
+                        Configurar 2FA
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if usuario.two_factor_enabled %}
+                    <!-- 2FA já está habilitado -->
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        A autenticação de dois fatores está <strong>ativa</strong> na sua conta.
+                    </div>
+
+                    <div class="mb-4">
+                        <h6>Para desativar o 2FA:</h6>
+                        <form method="POST" class="mt-3">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="acao" value="desativar">
+                            
+                            <div class="mb-3">
+                                <label for="senha_atual" class="form-label">Confirme sua senha atual</label>
+                                <input type="password" 
+                                       class="form-control" 
+                                       id="senha_atual" 
+                                       name="senha_atual" 
+                                       required>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja desativar o 2FA?')">
+                                <i class="bi bi-shield-x me-2"></i>Desativar 2FA
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="mt-4">
+                        <a href="{{ url_for('auth.backup_codes_2fa') }}" class="btn btn-outline">
+                            <i class="bi bi-key me-2"></i>Ver Códigos de Backup
+                        </a>
+                    </div>
+
+                {% else %}
+                    <!-- 2FA não está habilitado -->
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        A autenticação de dois fatores adiciona uma camada extra de segurança à sua conta.
+                    </div>
+
+                    {% if qr_code %}
+                        <!-- Passo 1: Escanear QR Code -->
+                        <h5 class="mb-3">Passo 1: Escaneie o QR Code</h5>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6 text-center">
+                                <img src="{{ qr_code }}" alt="QR Code" class="img-fluid border rounded p-2" style="max-width: 200px;">
+                                <p class="mt-2 text-muted small">Escaneie com Google Authenticator, Authy ou similar</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Ou insira manualmente:</h6>
+                                <div class="p-3 bg-light rounded">
+                                    <code class="fs-5">{{ secret_display }}</code>
+                                </div>
+                                <ol class="mt-3">
+                                    <li>Abra seu app autenticador</li>
+                                    <li>Escaneie o QR Code ou insira a chave</li>
+                                    <li>O app vai gerar um código de 6 dígitos</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <!-- Passo 2: Confirmar código -->
+                        <h5 class="mb-3">Passo 2: Confirme o código</h5>
+                        <form method="POST" action="{{ url_for('auth.configurar_2fa') }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="acao" value="ativar">
+                            
+                            <div class="mb-3">
+                                <label for="token" class="form-label">Código de 6 dígitos</label>
+                                <input type="text" 
+                                       class="form-control text-center" 
+                                       id="token" 
+                                       name="token" 
+                                       maxlength="6" 
+                                       pattern="[0-9]{6}"
+                                       placeholder="000000" 
+                                       required
+                                       style="font-size: 20px; letter-spacing: 6px; max-width: 200px;">
+                            </div>
+                            
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle me-2"></i>Ativar 2FA
+                            </button>
+                        </form>
+                    {% else %}
+                        <form method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="acao" value="ativar">
+                            
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-shield-check me-2"></i>Começar Configuração
+                            </button>
+                        </form>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-question-circle me-2"></i>O que é 2FA?</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">A autenticação em duas etapas (2FA) exige dois fatores para login:</p>
+                <ol class="text-muted">
+                    <li>Algo que você <strong>sabe</strong> (sua senha)</li>
+                    <li>Algo que você <strong>tem</strong> (seu celular)</li>
+                </ol>
+                <p class="text-muted small">Mesmo que alguém descubra sua senha, não conseguirá acessar sua conta sem o código do seu celular.</p>
+            </div>
+        </div>
+
+        {% if usuario.two_factor_enabled %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-key me-2"></i>Códigos de Backup</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">Use os códigos de backup se perder acesso ao seu celular. Cada código só pode ser usado uma vez.</p>
+                <a href="{{ url_for('auth.backup_codes_2fa') }}" class="btn btn-outline btn-sm w-100">
+                    <i class="bi bi-eye me-1"></i>Ver Meus Códigos
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

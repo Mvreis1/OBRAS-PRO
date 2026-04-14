@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}{% if conta %}Editar{% else %}Nova{% endif %} Conta Bancaria - {{ nome_sistema }}{% endblock %}
+{% block page_title %}{% if conta %}Editar{% else %}Nova{% endif %} Conta Bancaria{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="bi bi-bank me-2"></i>
+                    {% if conta %}Editar{% else %}Cadastrar{% endif %} Conta Bancaria
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nome da Conta *</label>
+                            <input type="text" name="nome" class="form-control" required 
+                                   value="{{ conta.nome if conta else '' }}"
+                                   placeholder="Ex: Conta Principal">
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Banco *</label>
+                            <input type="text" name="banco" class="form-select" list="bancos" required
+                                   value="{{ conta.banco if conta else '' }}"
+                                   placeholder="Ex: Banco do Brasil">
+                            <datalist id="bancos">
+                                <option value="Banco do Brasil">
+                                <option value="Bradesco">
+                                <option value="Itaú">
+                                <option value="Santander">
+                                <option value="Caixa">
+                                <option value="Safra">
+                                <option value="BTG Pactual">
+                            </datalist>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">Agencia</label>
+                            <input type="text" name="agencia" class="form-control" 
+                                   value="{{ conta.agencia if conta else '' }}"
+                                   placeholder="0000">
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">Conta</label>
+                            <input type="text" name="conta" class="form-control" 
+                                   value="{{ conta.conta if conta else '' }}"
+                                   placeholder="00000-0">
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">Tipo</label>
+                            <select name="tipo" class="form-select">
+                                <option value="Corrente" {% if conta and conta.tipo == 'Corrente' %}selected{% endif %}>Conta Corrente</option>
+                                <option value="Poupanca" {% if conta and conta.tipo == 'Poupanca' %}selected{% endif %}>Conta Poupanca</option>
+                                <option value="Investimento" {% if conta and conta.tipo == 'Investimento' %}selected{% endif %}>Investimento</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Saldo Inicial</label>
+                            <input type="number" name="saldo_inicial" class="form-control" step="0.01" 
+                                   value="{{ conta.saldo_inicial if conta else '0' }}">
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Observacoes</label>
+                            <textarea name="observacoes" class="form-control" rows="2">{{ conta.observacoes if conta else '' }}</textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-2"></i>Salvar
+                        </button>
+                        <a href="{{ url_for('banco.bancos') }}" class="btn btn-outline">
+                            <i class="bi bi-x-lg me-2"></i>Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

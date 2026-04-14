@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% from "macros/paginacao.html" import renderizar_paginacao %}
+
+{% block title %}Lancamentos - {{ nome_sistema }}{% endblock %}
+{% block page_title %}Lancamentos Financeiros{% endblock %}
+
+{% block topbar_actions %}
+<div style="display: flex; gap: 10px;">
+    <a href="{{ url_for('excel.exportar_lancamentos_excel', obra_id=obra_selecionada, tipo=tipo_selecionado, categoria=categoria_selecionada, data_inicio=data_inicio, data_fim=data_fim) }}" class="btn btn-success">
+        <i class="bi bi-file-earmark-excel me-2"></i>Exportar Excel
+    </a>
+    <a href="{{ url_for('main.novo_lancamento') }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-2"></i>Novo Lancamento
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('main.lancamentos') }}" class="row g-3 align-items-center">
+            <div class="col-md-2">
+                <select name="obra_id" class="form-select">
+                    <option value="">Todas as obras</option>
+                    {% for obra in obras %}
+                    <option value="{{ obra.id }}" {% if obra_selecionada|string == obra.id|string %}selected{% endif %}>
+                        {{ obra.nome }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="tipo" class="form-select">
+                    <option value="">Todos os tipos</option>
+                    <option value="Receita" {% if tipo_selecionado == 'Receita' %}selected{% endif %}>Receita</option>
+                    <option value="Despesa" {% if tipo_selecionado == 'Despesa' %}selected{% endif %}>Despesa</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="categoria" class="form-select">
+                    <option value="">Todas as categorias</option>
+                    <option value="Mao de Obra" {% if categoria_selecionada == 'Mao de Obra' %}selected{% endif %}>Mao de Obra</option>
+                    <option value="Material" {% if categoria_selecionada == 'Material' %}selected{% endif %}>Material</option>
+                    <option value="Equipamento" {% if categoria_selecionada == 'Equipamento' %}selected{% endif %}>Equipamento</option>
+                    <option value="Servico Terceiro" {% if categoria_selecionada == 'Servico Terceiro' %}selected{% endif %}>Servico Terceiro</option>
+                    <option value="Imposto" {% if categoria_selecionada == 'Imposto' %}selected{% endif %}>Imposto</option>
+                    <option value="Outros" {% if categoria_selecionada == 'Outros' %}selected{% endif %}>Outros</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="data_inicio" class="form-control" placeholder="Data inicial" value="{{ data_inicio or '' }}">
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="data_fim" class="form-control" placeholder="Data final" value="{{ data_fim or '' }}">
+            </div>
+            <div class="col-md-2">
+                <div style="display: flex; gap: 5px;">
+                    <button type="submit" class="btn btn-outline" style="flex: 1;">
+                        <i class="bi bi-funnel"></i>
+                    </button>
+                    <a href="{{ url_for('main.lancamentos') }}" class="btn btn-outline" style="flex: 1;">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon primary">
+                <i class="bi bi-arrow-down-circle"></i>
+            </div>
+            <div class="stat-value" style="color: #4ade80;">
+                R$ {{ lancamentos|selectattr('tipo', 'equalto', 'Receita')|map(attribute='valor')|sum|format_currency }}
+            </div>
+            <div class="stat-label">Total Receitas</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon danger">
+                <i class="bi bi-arrow-up-circle"></i>
+            </div>
+            <div class="stat-value" style="color: #f87171;">
+                R$ {{ lancamentos|selectattr('tipo', 'equalto', 'Despesa')|map(attribute='valor')|sum|format_currency }}
+            </div>
+            <div class="stat-label">Total Despesas</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon success">
+                <i class="bi bi-wallet2"></i>
+            </div>
+            <div class="stat-value">
+                R$ {{ (lancamentos|selectattr('tipo', 'equalto', 'Receita')|map(attribute='valor')|sum) - (lancamentos|selectattr('tipo', 'equalto', 'Despesa')|map(attribute='valor')|sum) }}
+            </div>
+            <div class="stat-label">Saldo</div>
+        </div>
+    </div>
+</div>
+
+<!-- Lancamentos Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title">
+            <i class="bi bi-list-ul me-2"></i>
+            Lista de Lancamentos ({{ paginacao.total }})
+        </h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Descricao</th>
+                    <th>Obra</th>
+                    <th>Categoria</th>
+                    <th>Tipo</th>
+                    <th>Valor</th>
+                    <th>Status</th>
+                    <th style="width: 100px;">Acoes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lanc in lancamentos %}
+                <tr>
+                    <td>{{ lanc.data|format_date }}</td>
+                    <td>
+                        <div style="font-weight: 500; color: var(--text-primary);">{{ lanc.descricao }}</div>
+                        {% if lanc.documento %}
+                        <div style="font-size: 11px; color: var(--text-muted);">Doc: {{ lanc.documento }}</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if lanc.obra %}
+                        <a href="{{ url_for('main.obra_detalhe', obra_id=lanc.obra.id) }}" style="color: #818cf8;">
+                            {{ lanc.obra.nome }}
+                        </a>
+                        {% else %}
+                        <span style="color: var(--text-muted);">-</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ lanc.categoria }}</td>
+                    <td>
+                        {% if lanc.tipo == 'Receita' %}
+                        <span class="badge badge-success">{{ lanc.tipo }}</span>
+                        {% else %}
+                        <span class="badge badge-danger">{{ lanc.tipo }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-weight: 600; color: {% if lanc.tipo == 'Receita' %}#4ade80{% else %}#f87171{% endif %};">
+                        {% if lanc.tipo == 'Receita' %}+{% else %}-{% endif %}{{ lanc.valor|format_currency }}
+                    </td>
+                    <td>
+                        {% if lanc.status_pagamento == 'Pago' %}
+                        <span class="badge badge-success">Pago</span>
+                        {% elif lanc.status_pagamento == 'Pendente' %}
+                        <span class="badge badge-warning">Pendente</span>
+                        {% else %}
+                        <span class="badge badge-primary">{{ lanc.status_pagamento }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 4px;">
+                            <a href="{{ url_for('main.editar_lancamento', lancamento_id=lanc.id) }}" class="btn btn-outline btn-sm" title="Editar" style="padding: 4px 8px;">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <form method="POST" action="{{ url_for('main.excluir_lancamento', lancamento_id=lanc.id) }}" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja excluir?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-outline btn-sm" title="Excluir" style="padding: 4px 8px; color: #f87171; border-color: #f87171;">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 60px;">
+                        <div style="width: 64px; height: 64px; background: var(--bg-tertiary); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                            <i class="bi bi-cash-stack" style="font-size: 28px; color: var(--text-muted);"></i>
+                        </div>
+                        <h4 style="margin-bottom: 10px; color: var(--text-primary);">Nenhum lancamento encontrado</h4>
+                        <p style="color: var(--text-muted); margin-bottom: 25px;">Cadastre seu primeiro lancamento financeiro</p>
+                        <a href="{{ url_for('main.novo_lancamento') }}" class="btn btn-primary">
+                            <i class="bi bi-plus-lg me-2"></i>Novo Lancamento
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {# Paginação #}
+    <div class="card-body" style="padding: 16px 24px;">
+        {{ renderizar_paginacao(paginacao, 'main.lancamentos', page_args) }}
+    </div>
+</div>
+{% endblock %}

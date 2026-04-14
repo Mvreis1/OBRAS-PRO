@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-upload"></i> Importar Extrato - {{ conta.nome }}</h2>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Upload de Arquivo</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label class="form-label">Arquivo de Extrato</label>
+                            <input type="file" name="arquivo" class="form-control" accept=".ofx,.csv,.txt" required>
+                            <small class="text-muted">Formatos suportados: OFX, CSV, CNAB 240</small>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-upload"></i> Importar
+                            </button>
+                            <a href="{{ url_for('banco.banco_detalhe', conta_id=conta.id) }}" class="btn btn-outline">
+                                Voltar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Formatos Suportados</h5>
+                </div>
+                <div class="card-body">
+                    <h6>OFX</h6>
+                    <p class="text-muted small">Formato padrão do Microsoft Money e QuickBooks. Contém transações bancárias com data, valor e descrição.</p>
+                    
+                    <h6 class="mt-3">CSV</h6>
+                    <p class="text-muted small">Formato genérico com colunas:</p>
+                    <code class="d-block mb-2">Data;Descricao;Valor;Documento</code>
+                    <p class="text-muted small">Exemplo:</p>
+                    <code class="d-block">01/01/2026;Pagamento;1500,00;123</code>
+                    <a href="{{ url_for('extrato.modelo_csv') }}" class="btn btn-sm btn-outline mt-2">
+                        <i class="bi bi-download"></i> Baixar Modelo
+                    </a>
+                    
+                    <h6 class="mt-3">CNAB 240</h6>
+                    <p class="text-muted small">Formato brasileiro de extrato bancário. Usado pela maioria dos bancos nacionais.</p>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Importante</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="small text-muted">
+                        <li>Lançamentos duplicados não são importados</li>
+                        <li>Saldo é calculado automaticamente após importação</li>
+                        <li>Valores positivos = Crédito</li>
+                        <li>Valores negativos = Débito</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

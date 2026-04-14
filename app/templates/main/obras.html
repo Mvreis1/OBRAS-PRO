@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% from "macros/paginacao.html" import renderizar_paginacao %}
+
+{% block title %}Obras - {{ nome_sistema }}{% endblock %}
+{% block page_title %}Gestao de Obras{% endblock %}
+
+{% block topbar_actions %}
+<div style="display: flex; gap: 10px;">
+    <a href="{{ url_for('excel.exportar_obras_excel') }}" class="btn btn-success">
+        <i class="bi bi-file-earmark-excel me-2"></i>Exportar Excel
+    </a>
+    <a href="{{ url_for('main.nova_obra') }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-2"></i>Nova Obra
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-4">
+                <input type="text" class="form-control" placeholder="Buscar obra..." style="background: var(--bg-tertiary);">
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" style="background: var(--bg-tertiary);">
+                    <option value="">Todos os status</option>
+                    <option value="Planejamento">Planejamento</option>
+                    <option value="Em Execução">Em Execução</option>
+                    <option value="Paralisada">Paralisada</option>
+                    <option value="Concluída">Concluída</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" style="background: var(--bg-tertiary);">
+                    <option value="">Ordenar por</option>
+                    <option value="nome">Nome</option>
+                    <option value="orcamento">Orcamento</option>
+                    <option value="progresso">Progresso</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline w-100">
+                    <i class="bi bi-funnel me-2"></i>Filtrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Works Grid -->
+{% set alertas_dict = {} %}
+{% if alertas %}
+{% for a in alertas %}
+{% set _ = alertas_dict.update({a.obra_nome: a}) %}
+{% endfor %}
+{% endif %}
+
+<div class="row g-4">
+    {% for obra in obras %}
+    {% set alerta_obra = alertas_dict.get(obra.nome) %}
+    <div class="col-md-6 col-xl-4">
+        <div class="card h-100" style="cursor: pointer; transition: all 0.2s ease; {% if alerta_obra %}border: 2px solid {{ alerta_obra.cor }};{% endif %}" onclick="window.location='{{ url_for('main.obra_detalhe', obra_id=obra.id) }}'">
+            {% if alerta_obra %}
+            <div style="background: {{ alerta_obra.cor }}; padding: 6px 12px; font-size: 11px; font-weight: 600; color: white;">
+                <i class="{{ alerta_obra.icon }}"></i> {{ alerta_obra.mensagem }}
+            </div>
+            {% endif %}
+            <div class="card-body">
+                <!-- Header -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                    <div>
+                        <h5 style="font-size: 15px; font-weight: 600; margin-bottom: 4px; color: var(--text-primary);">
+                            {{ obra.nome }}
+                        </h5>
+                        <p style="font-size: 12px; color: var(--text-muted); margin: 0;">
+                            <i class="bi bi-person me-1"></i>{{ obra.cliente or 'Nao cadastrado' }}
+                        </p>
+                    </div>
+                    {% if obra.status == 'Planejamento' %}
+                        <span class="badge badge-warning">{{ obra.status }}</span>
+                    {% elif obra.status == 'Em Execução' %}
+                        <span class="badge badge-primary">{{ obra.status }}</span>
+                    {% elif obra.status == 'Concluída' %}
+                        <span class="badge badge-success">{{ obra.status }}</span>
+                    {% else %}
+                        <span class="badge badge-danger">{{ obra.status }}</span>
+                    {% endif %}
+                </div>
+                
+                <!-- Progress -->
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-size: 12px; color: var(--text-muted);">Progresso</span>
+                        <span style="font-size: 12px; font-weight: 600; color: var(--text-primary);">{{ obra.progresso }}%</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {{ obra.progresso }}%; background: {% if obra.progresso < 30 %}#f87171{% elif obra.progresso < 70 %}#fbbf24{% else %}#4ade80{% endif %};">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Financial Info -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px 0; border-top: 1px solid var(--border-subtle); border-bottom: 1px solid var(--border-subtle);">
+                    <div>
+                        <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Orcamento</div>
+                        <div style="font-size: 14px; font-weight: 600; color: var(--text-primary);">{{ obra.orcamento_previsto|format_currency }}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Gasto</div>
+                        {% set total_gasto = namespace(value=0) %}
+                        {% for lanc in obra.lancamentos %}
+                            {% if lanc.tipo == 'Despesa' %}
+                                {% set total_gasto.value = total_gasto.value + lanc.valor %}
+                            {% endif %}
+                        {% endfor %}
+                        <div style="font-size: 14px; font-weight: 600; color: #f87171;">{{ total_gasto.value|format_currency }}</div>
+                    </div>
+                </div>
+                
+                <!-- Footer -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px;">
+                    <div style="font-size: 12px; color: var(--text-muted);">
+                        <i class="bi bi-calendar3 me-1"></i>
+                        {% if obra.data_inicio %}
+                            {{ obra.data_inicio|format_date }}
+                        {% else %}
+                            Nao definida
+                        {% endif %}
+                    </div>
+                    <div onclick="event.stopPropagation();" style="display: flex; gap: 6px;">
+                        <a href="{{ url_for('main.obra_detalhe', obra_id=obra.id) }}" class="btn btn-outline btn-sm" title="Ver detalhes" style="padding: 6px 10px;">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a href="{{ url_for('main.editar_obra', obra_id=obra.id) }}" class="btn btn-outline btn-sm" title="Editar" style="padding: 6px 10px;">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body" style="text-align: center; padding: 60px;">
+                <div style="width: 64px; height: 64px; background: var(--bg-tertiary); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                    <i class="bi bi-building" style="font-size: 28px; color: var(--text-muted);"></i>
+                </div>
+                <h4 style="margin-bottom: 10px; color: var(--text-primary);">Nenhuma obra cadastrada</h4>
+                <p style="color: var(--text-muted); margin-bottom: 25px;">Comece cadastrando sua primeira obra para gerenciar</p>
+                <a href="{{ url_for('main.nova_obra') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-2"></i>Cadastrar Primeira Obra
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Stats Footer -->
+{% if obras %}
+<div class="card mt-4">
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col-md-3">
+                <div style="font-size: 24px; font-weight: 700; color: #818cf8;">{{ paginacao.total }}</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Total de Obras</div>
+            </div>
+            <div class="col-md-3">
+                <div style="font-size: 24px; font-weight: 700; color: #818cf8;">
+                    {{ obras|selectattr('status', 'equalto', 'Em Execução')|list|length }}
+                    ...
+                    <div style="font-size: 12px; color: var(--text-muted);">Em Execução</div>
+            </div>
+            <div class="col-md-3">
+                <div style="font-size: 24px; font-weight: 700; color: #fbbf24;">
+                    {{ obras|selectattr('status', 'equalto', 'Planejamento')|list|length }}
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted);">Em Planejamento</div>
+            </div>
+            <div class="col-md-3">
+                <div style="font-size: 24px; font-weight: 700; color: #4ade80;">
+                    {{ obras|selectattr('status', 'equalto', 'Concluída')|list|length }}
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted);">Concluídas</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Paginação #}
+{{ renderizar_paginacao(paginacao, 'main.obras', {}) }}
+{% endif %}
+{% endblock %}

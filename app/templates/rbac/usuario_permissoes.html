@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Permissões de {{ usuario.nome }} - {{ nome_sistema }}{% endblock %}
+{% block page_title %}Permissões de {{ usuario.nome }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('rbac.gerenciar_usuarios_permissoes') }}" class="btn btn-outline">
+    <i class="bi bi-arrow-left me-2"></i>Voltar
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <!-- Role Assignment -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-person-badge me-2"></i>Perfil do Usuário</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="acao" value="alterar_role">
+                    
+                    <div class="mb-3">
+                        <label for="role_id" class="form-label">Perfil de Acesso</label>
+                        <select class="form-select" id="role_id" name="role_id" onchange="this.form.submit()">
+                            <option value="">Nenhum (usar permissões individuais)</option>
+                            {% for role in roles %}
+                            <option value="{{ role.id }}" {% if usuario.role_id == role.id %}selected{% endif %}>
+                                {{ role.nome }} - {{ role.descricao or 'Sem descrição' }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">O usuário herdará todas as permissões deste perfil.</small>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Individual Permissions -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-shield-lock me-2"></i>Permissões Individuais</h5>
+                <small class="text-muted">Adicione ou remova permissões específicas (override do perfil)</small>
+            </div>
+            <div class="card-body">
+                <form method="POST" class="mb-4">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="acao" value="add_permissao">
+                    
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-6">
+                            <label for="permissao_id" class="form-label">Permissão</label>
+                            <select class="form-select" id="permissao_id" name="permissao_id" required>
+                                <option value="">Selecione...</option>
+                                {% for modulo, perms in permissoes_por_modulo.items() %}
+                                <optgroup label="{{ modulo|title }}">
+                                    {% for perm in perms %}
+                                    {% if perm.id not in permissoes_individuais %}
+                                    <option value="{{ perm.id }}">{{ modulo }}: {{ perm.acao }} - {{ perm.descricao }}</option>
+                                    {% endif %}
+                                    {% endfor %}
+                                </optgroup>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="tipo" class="form-label">Tipo</label>
+                            <select class="form-select" id="tipo" name="tipo">
+                                <option value="allow">Permitir</option>
+                                <option value="deny">Negar</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-plus-lg me-1"></i>Adicionar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Current Individual Permissions -->
+                <h6 class="mb-3">Permissões Individuais Atuais</h6>
+                {% if permissoes_individuais %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Módulo</th>
+                                <th>Ação</th>
+                                <th>Tipo</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for perm_id, pu in permissoes_individuais.items() %}
+                            <tr>
+                                <td>{{ pu.permissao.modulo|title }}</td>
+                                <td>{{ pu.permissao.acao }}</td>
+                                <td>
+                                    {% if pu.tipo == 'allow' %}
+                                    <span class="badge badge-success">Permitir</span>
+                                    {% else %}
+                                    <span class="badge badge-danger">Negar</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <form method="POST" style="display: inline;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="acao" value="remover_permissao">
+                                        <input type="hidden" name="permissao_id" value="{{ perm_id }}">
+                                        <button type="submit" class="btn btn-sm btn-outline" style="color: var(--danger);" title="Remover">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">Nenhuma permissão individual definida. O usuário usará apenas as permissões do perfil.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-person me-2"></i>Informações</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Nome:</dt>
+                    <dd class="col-sm-7">{{ usuario.nome }}</dd>
+                    
+                    <dt class="col-sm-5">Email:</dt>
+                    <dd class="col-sm-7">{{ usuario.email }}</dd>
+                    
+                    <dt class="col-sm-5">Cargo:</dt>
+                    <dd class="col-sm-7">{{ usuario.cargo }}</dd>
+                    
+                    <dt class="col-sm-5">Perfil Atual:</dt>
+                    <dd class="col-sm-7">
+                        {% if usuario.role_obj %}
+                            <span class="badge badge-primary">{{ usuario.role_obj.nome }}</span>
+                        {% else %}
+                            <span class="badge badge-warning">Individual</span>
+                        {% endif %}
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

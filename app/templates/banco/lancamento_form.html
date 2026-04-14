@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Novo Lancamento - {{ conta.nome }} - {{ nome_sistema }}{% endblock %}
+{% block page_title %}Novo Lancamento{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('banco.banco_detalhe', conta_id=conta.id) }}" class="btn btn-outline">
+    <i class="bi bi-arrow-left me-2"></i>Voltar
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Novo Lancamento - {{ conta.nome }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label">Descricao *</label>
+                            <input type="text" name="descricao" class="form-control" required 
+                                   placeholder="Ex: Pagamento fornecedor">
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">Tipo *</label>
+                            <select name="tipo" class="form-select" required>
+                                <option value="Credito">Credito (Entrada)</option>
+                                <option value="Debito">Debito (Saida)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">Valor (R$) *</label>
+                            <input type="number" name="valor" class="form-control" step="0.01" min="0.01" required 
+                                   placeholder="0,00">
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">Data *</label>
+                            <input type="date" name="data" class="form-control" required 
+                                   value="{{ data.strftime('%Y-%m-%d') if data else '' }}" placeholder="Selecione a data">
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">Categoria</label>
+                            <select name="categoria" class="form-select">
+                                <option value="Transferencia">Transferencia</option>
+                                <option value="Pagamento">Pagamento</option>
+                                <option value="Recebimento">Recebimento</option>
+                                <option value="Taxa">Taxa/Juros</option>
+                                <option value="Outros">Outros</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-12">
+                            <label class="form-label">Documento</label>
+                            <input type="text" name="documento" class="form-control" 
+                                   placeholder="Ex: Boleto, NF, etc.">
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-2"></i>Salvar
+                        </button>
+                        <a href="{{ url_for('banco.banco_detalhe', conta_id=conta.id) }}" class="btn btn-outline">
+                            <i class="bi bi-x-lg me-2"></i>Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="bi bi-info-circle me-2"></i>Informacao
+                </h5>
+            </div>
+            <div class="card-body">
+                <p style="font-size: 13px; color: var(--text-secondary);">
+                    <strong>Conta:</strong> {{ conta.nome }}<br>
+                    <strong>Banco:</strong> {{ conta.banco }}<br>
+                    <strong>Saldo Atual:</strong> {{ conta.saldo_atual|format_currency }}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

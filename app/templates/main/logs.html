@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% from "macros/paginacao.html" import renderizar_paginacao %}
+
+{% block title %}Auditoria - {{ nome_sistema }}{% endblock %}
+{% block page_title %}Logs de Auditoria{% endblock %}
+
+{% block topbar_actions %}
+<button class="btn btn-outline" onclick="window.location.reload()">
+    <i class="bi bi-arrow-clockwise me-2"></i>Atualizar
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title">
+            <i class="bi bi-journal-text me-2"></i>
+            Registro de Atividades
+        </h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Data/Hora</th>
+                    <th>Usuario</th>
+                    <th>Acao</th>
+                    <th>Entidade</th>
+                    <th>Detalhes</th>
+                    <th>IP</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td style="white-space: nowrap; font-size: 12px;">{{ log.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td>
+                        <span class="badge badge-primary">{{ log.usuario.nome if log.usuario else 'Sistema' }}</span>
+                    </td>
+                    <td style="font-weight: 500;">{{ log.acao }}</td>
+                    <td>{{ log.entidade or '-' }}</td>
+                    <td style="font-size: 12px; color: var(--text-muted); max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        {{ log.detalhes or '-' }}
+                    </td>
+                    <td style="font-size: 11px; color: var(--text-muted);">{{ log.ip or '-' }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 60px;">
+                        <div style="width: 64px; height: 64px; background: var(--bg-tertiary); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                            <i class="bi bi-journal-text" style="font-size: 28px; color: var(--text-muted);"></i>
+                        </div>
+                        <h4 style="margin-bottom: 10px; color: var(--text-primary);">Nenhum registro</h4>
+                        <p style="color: var(--text-muted);">As atividades aparecerao aqui</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {# Paginação #}
+    {{ renderizar_paginacao(paginacao, 'main.ver_logs', {}) }}
+</div>
+{% endblock %}

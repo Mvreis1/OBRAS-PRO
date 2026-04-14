@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Transferencia - {{ nome_sistema }}{% endblock %}
+{% block page_title %}Transferencia Entre Contas{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('banco.bancos') }}" class="btn btn-outline">
+    <i class="bi bi-arrow-left me-2"></i>Voltar
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="bi bi-arrow-left-right me-2"></i>
+                    Nova Transferencia
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Conta Origem *</label>
+                            <select name="conta_origem" class="form-select" required>
+                                <option value="">Selecione a conta</option>
+                                {% for conta in contas %}
+                                <option value="{{ conta.id }}">
+                                    {{ conta.nome }} - {{ conta.banco }} (Saldo: {{ conta.saldo_atual|format_currency }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Conta Destino *</label>
+                            <select name="conta_destino" class="form-select" required>
+                                <option value="">Selecione a conta</option>
+                                {% for conta in contas %}
+                                <option value="{{ conta.id }}">
+                                    {{ conta.nome }} - {{ conta.banco }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Valor (R$) *</label>
+                            <input type="number" name="valor" class="form-control" step="0.01" min="0.01" required 
+                                   placeholder="0,00">
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Data *</label>
+                            <input type="date" name="data" class="form-control" required 
+                                   value="{{ data.strftime('%Y-%m-%d') if data else '' }}">
+                        </div>
+                        
+                        <div class="col-md-12">
+                            <label class="form-label">Documento</label>
+                            <input type="text" name="documento" class="form-control" 
+                                   placeholder="Ex: TED, DOC, etc.">
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-2"></i>Transferir
+                        </button>
+                        <a href="{{ url_for('banco.bancos') }}" class="btn btn-outline">
+                            <i class="bi bi-x-lg me-2"></i>Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i class="bi bi-info-circle me-2"></i>Informacao
+                </h5>
+            </div>
+            <div class="card-body" style="font-size: 13px; color: var(--text-secondary);">
+                <p>Transferencias sao registradas automaticamente em ambas as contas.</p>
+                <p><strong>Credito:</strong> Valor entra na conta destino.</p>
+                <p><strong>Debito:</strong> Valor sai da conta origem.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

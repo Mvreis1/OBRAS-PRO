@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}{% if obra %}Editar{% else %}Nova{% endif %} Obra - {{ nome_sistema }}{% endblock %}
+{% block page_title %}{% if obra %}Editar{% else %}Nova{% endif %} Obra{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('main.obras') }}" class="btn btn-outline">
+    <i class="bi bi-arrow-left me-2"></i>Voltar
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="bi bi-building me-2"></i>Dados da Obra</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label class="form-label">Nome da Obra *</label>
+                                <input type="text" class="form-control" name="nome" value="{{ obra.nome if obra else '' }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Status *</label>
+                                <select class="form-select" name="status" required>
+                                    <option value="Planejamento" {% if obra and obra.status == 'Planejamento' %}selected{% endif %}>Planejamento</option>
+                                    <option value="Em Execução" {% if obra and obra.status == 'Em Execução' %}selected{% endif %}>Em Execução</option>
+                                    <option value="Paralisada" {% if obra and obra.status == 'Paralisada' %}selected{% endif %}>Paralisada</option>
+                                    <option value="Concluída" {% if obra and obra.status == 'Concluída' %}selected{% endif %}>Concluída</option>
+                                    <option value="Entregue" {% if obra and obra.status == 'Entregue' %}selected{% endif %}>Entregue</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Descricao</label>
+                        <textarea class="form-control" name="descricao" rows="3">{{ obra.descricao if obra and obra.descricao else '' }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Endereco</label>
+                        <input type="text" class="form-control" name="endereco" value="{{ obra.endereco if obra and obra.endereco else '' }}">
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Cliente</label>
+                                <input type="text" class="form-control" name="cliente" value="{{ obra.cliente if obra and obra.cliente else '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Responsavel</label>
+                                <input type="text" class="form-control" name="responsavel" value="{{ obra.responsavel if obra and obra.responsavel else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Orcamento Previsto *</label>
+                                <input type="number" step="0.01" class="form-control" name="orcamento_previsto" value="{{ obra.orcamento_previsto if obra else '' }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Data Inicio</label>
+                                <input type="date" class="form-control" name="data_inicio" value="{{ obra.data_inicio if obra and obra.data_inicio else '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Previsao Termino</label>
+                                <input type="date" class="form-control" name="data_fim_prevista" value="{{ obra.data_fim_prevista if obra and obra.data_fim_prevista else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">Progresso (%)</label>
+                        <input type="range" class="form-range" min="0" max="100" name="progresso" value="{{ obra.progresso if obra else 0 }}" oninput="this.nextElementSibling.value = this.value + '%'">
+                        <output>{{ obra.progresso if obra else 0 }}%</output>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <a href="{{ url_for('main.obras') }}" class="btn btn-outline">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-2"></i>Salvar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="bi bi-info-circle me-2"></i>Ajuda</h5>
+            </div>
+            <div class="card-body">
+                <p style="font-size: 13px; color: var(--secondary);">
+                    <strong>Planejamento:</strong> Obra em fase de planejamento<br><br>
+                    <strong>Em Execução:</strong> Obra em construção<br><br>
+                    <strong>Paralisada:</strong> Obra pausada temporariamente<br><br>
+                    <strong>Concluída:</strong> Construção finalizada<br><br>
+                    <strong>Entregue:</strong> Obra entregue ao cliente
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

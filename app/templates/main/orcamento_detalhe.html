@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block page_title %}Orçamento: {{ orcamento.titulo }}{% endblock %}
+
+{% block topbar_actions %}
+<div style="display: flex; gap: 10px;">
+    <a href="{{ url_for('orcamentos.orcamentos') }}" class="btn btn-outline">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+    <a href="{{ url_for('orcamentos.editar_orcamento', orcamento_id=orcamento.id) }}" class="btn btn-outline">
+        <i class="bi bi-pencil"></i> Editar
+    </a>
+    <a href="{{ url_for('orcamentos.enviar_orcamento', orcamento_id=orcamento.id) }}" class="btn btn-primary">
+        <i class="bi bi-envelope"></i> Enviar
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Dados do Cliente</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Cliente</h6>
+                        <p class="mb-3">{{ orcamento.cliente }}</p>
+                        
+                        <h6 class="text-muted">Email</h6>
+                        <p class="mb-3">{{ orcamento.cliente_email or '-' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Telefone</h6>
+                        <p class="mb-3">{{ orcamento.cliente_telefone or '-' }}</p>
+                        
+                        <h6 class="text-muted">Endereço</h6>
+                        <p>{{ orcamento.cliente_endereco or '-' }}</p>
+                    </div>
+                </div>
+                
+                {% if orcamento.descricao %}
+                <h6 class="text-muted mt-3">Descrição</h6>
+                <p>{{ orcamento.descricao }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Status</h5>
+            </div>
+            <div class="card-body">
+                {% if orcamento.status == 'Rascunho' %}
+                <span class="badge bg-secondary fs-5">Rascunho</span>
+                {% elif orcamento.status == 'Enviado' %}
+                <span class="badge bg-info fs-5">Enviado</span>
+                {% elif orcamento.status == 'Aprovado' %}
+                <span class="badge bg-success fs-5">Aprovado</span>
+                {% elif orcamento.status == 'Reprovado' %}
+                <span class="badge bg-danger fs-5">Reprovado</span>
+                {% endif %}
+                
+                <div class="mt-3">
+                    <small class="text-muted">Criado em:</small>
+                    <p>{{ orcamento.created_at.strftime('%d/%m/%Y') if orcamento.created_at else '-' }}</p>
+                </div>
+                
+                {% if orcamento.enviado %}
+                <div>
+                    <small class="text-muted">Enviado em:</small>
+                    <p>{{ orcamento.data_envio.strftime('%d/%m/%Y') if orcamento.data_envio else '-' }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Itens</h5>
+            </div>
+            <div class="card-body">
+                {% if orcamento.itens %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Categoria</th>
+                                <th>Descrição</th>
+                                <th class="text-end">Qtd</th>
+                                <th class="text-end">Unitário</th>
+                                <th class="text-end">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in orcamento.itens %}
+                            <tr>
+                                <td>{{ item.categoria }}</td>
+                                <td>{{ item.descricao }}</td>
+                                <td class="text-end">{{ item.quantidade }} {{ item.unidade }}</td>
+                                <td class="text-end">{{ item.valor_unitario|format_currency }}</td>
+                                <td class="text-end">{{ item.valor_total|format_currency }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">Nenhum item cadastrado</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Valores</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Materiais:</span>
+                            <span>{{ orcamento.valor_materiais|format_currency }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Mão de Obra:</span>
+                            <span>{{ orcamento.valor_mao_obra|format_currency }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Equipamentos:</span>
+                            <span>{{ orcamento.valor_equipamentos|format_currency }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Outros:</span>
+                            <span>{{ orcamento.valor_outros|format_currency }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <span>{{ ((orcamento.valor_materiais or 0) + (orcamento.valor_mao_obra or 0) + (orcamento.valor_equipamentos or 0) + (orcamento.valor_outros or 0))|format_currency }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2 text-danger">
+                            <span>Desconto:</span>
+                            <span>-{{ orcamento.desconto|format_currency }}</span>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <h4>Total:</h4>
+                    <h4 class="text-success">{{ orcamento.valor_total|format_currency }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Ações</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('orcamentos.gerar_contrato', orcamento_id=orcamento.id) }}" class="btn btn-success">
+                        <i class="bi bi-file-earmark-text"></i> Gerar Contrato
+                    </a>
+                    <a href="{{ url_for('orcamentos.duplicar_orcamento', orcamento_id=orcamento.id) }}" class="btn btn-outline">
+                        <i class="bi bi-copy"></i> Duplicar
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Informações Adicionais</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <small class="text-muted">Prazo de Execução</small>
+                    <p>{{ orcamento.prazo_execucao or '-' }} dias</p>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted">Validade</small>
+                    <p>{{ orcamento.validade }} dias</p>
+                </div>
+                <div>
+                    <small class="text-muted">Forma de Pagamento</small>
+                    <p>{{ orcamento.forma_pagamento or '-' }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

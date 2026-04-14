@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}Assistente IA - {{ nome_sistema }}{% endblock %}
+{% block page_title %}Assistente IA{% endblock %}
+
+{% block topbar_actions %}
+<button class="btn btn-outline" onclick="limparChat()">
+    <i class="bi bi-arrow-counterclockwise me-2"></i>Nova Conversa
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Sidebar Info -->
+    <div class="col-md-4">
+        <!-- AI Info Card -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title"><i class="bi bi-robot me-2"></i>Assistente Virtual</h5>
+            </div>
+            <div class="card-body" style="text-align: center; padding: 30px;">
+                <div style="width: 72px; height: 72px; background: var(--gradient-primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);">
+                    <i class="bi bi-robot" style="font-size: 32px; color: white;"></i>
+                </div>
+                <h5 style="margin-bottom: 4px;">Assistente IA</h5>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 20px;">Gestao de Obras</p>
+                
+                <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+                    Posso ajudar com analises financeiras, status das obras, relatorios de custos e alertas de risco.
+                </p>
+            </div>
+        </div>
+        
+        <!-- Quick Questions -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title"><i class="bi bi-lightning me-2"></i>Perguntas Rapidas</h5>
+            </div>
+            <div class="card-body" style="display: flex; flex-direction: column; gap: 8px;">
+                <button class="btn btn-outline" onclick="perguntaRapida('Qual o saldo total das obras?')" style="justify-content: flex-start;">
+                    <i class="bi bi-cash me-2"></i>Qual o saldo total?
+                </button>
+                <button class="btn btn-outline" onclick="perguntaRapida('Liste as obras em andamento')" style="justify-content: flex-start;">
+                    <i class="bi bi-building me-2"></i>Obras em andamento
+                </button>
+                <button class="btn btn-outline" onclick="perguntaRapida('Me give um relatorio de custos')" style="justify-content: flex-start;">
+                    <i class="bi bi-file-text me-2"></i>Relatorio de custos
+                </button>
+                <button class="btn btn-outline" onclick="perguntaRapida('Tem alertas de risco?')" style="justify-content: flex-start;">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Alertas de risco
+                </button>
+            </div>
+        </div>
+        
+        <!-- Summary Stats -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="bi bi-graph-up me-2"></i>Resumo Geral</h5>
+            </div>
+            <div class="card-body">
+                <div style="padding: 12px 0; border-bottom: 1px solid var(--border-subtle);">
+                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Total de Obras</div>
+                    <div style="font-size: 20px; font-weight: 700;">5</div>
+                </div>
+                <div style="padding: 12px 0; border-bottom: 1px solid var(--border-subtle);">
+                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Em Execução</div>
+                    <div style="font-size: 20px; font-weight: 700; color: #818cf8;">4</div>
+                </div>
+                <div style="padding: 12px 0;">
+                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Total Orcado</div>
+                    <div style="font-size: 20px; font-weight: 700;">R$ 28.5M</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Chat Area -->
+    <div class="col-md-8">
+        <div class="card" style="height: calc(100vh - 220px); display: flex; flex-direction: column;">
+            <!-- Chat Messages -->
+            <div id="chatArea" style="flex: 1; overflow-y: auto; padding: 24px;">
+                
+                <!-- Welcome Message -->
+                <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+                    <div style="width: 36px; height: 36px; background: var(--gradient-primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i class="bi bi-robot" style="font-size: 16px; color: white;"></i>
+                    </div>
+                    <div style="background: var(--bg-tertiary); padding: 14px 18px; border-radius: 0 16px 16px 16px; max-width: 85%;">
+                        <p style="margin: 0; font-size: 13px; color: var(--text-primary); line-height: 1.6;">
+                            Olá! Sou o assistente de gestão de obras.<br><br>
+                            Posso ajudar com:<br>
+                            <i class="bi bi-check2 me-2" style="color: #4ade80;"></i>Informações financeiras<br>
+                            <i class="bi bi-check2 me-2" style="color: #4ade80;"></i>Status e progresso das obras<br>
+                            <i class="bi bi-check2 me-2" style="color: #4ade80;"></i>Relatórios de custos<br>
+                            <i class="bi bi-check2 me-2" style="color: #4ade80;"></i>Alertas de risco<br><br>
+                            Como posso ajudar?
+                        </p>
+                    </div>
+                </div>
+                
+            </div>
+            
+            <!-- Input Area -->
+            <div style="padding: 20px 24px; border-top: 1px solid var(--border-subtle); background: var(--bg-tertiary);">
+                <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                    <select id="modeloSelect" class="form-select" style="width: auto; background: var(--bg-secondary);">
+                        <option value="local">🤖 Assistente Local</option>
+                        <option value="gpt-3.5-turbo">🧠 ChatGPT (GPT-3.5)</option>
+                        <option value="gpt-4">💎 ChatGPT (GPT-4)</option>
+                        <option value="gpt-4-turbo">⚡ ChatGPT (GPT-4 Turbo)</option>
+                    </select>
+                    <span style="font-size: 12px; color: var(--text-muted); align-self: center;">
+                        <i class="bi bi-info-circle me-1"></i>Selecione o modelo IA
+                    </span>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <input type="text" id="mensagemInput" class="form-control" 
+                           placeholder="Digite sua pergunta..." 
+                           onkeypress="if(event.key === 'Enter') enviarMensagem()"
+                           style="background: var(--bg-secondary);">
+                    <button class="btn btn-primary" onclick="enviarMensagem()" style="padding: 12px 20px; width: 50px; justify-content: center;">
+                        <i class="bi bi-send"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function enviarMensagem() {
+    const input = document.getElementById('mensagemInput');
+    const mensagem = input.value.trim();
+    const modelo = document.getElementById('modeloSelect').value;
+    
+    if (!mensagem) return;
+    
+    adicionarMensagem('user', mensagem);
+    input.value = '';
+    mostrarTyping();
+    
+    fetch('/ia/api/ia/chat', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({mensagem: mensagem, modelo: modelo})
+    })
+    .then(res => res.json())
+    .then(data => {
+        removerTyping();
+        adicionarMensagem('ia', data.resposta);
+    })
+    .catch(err => {
+        removerTyping();
+        adicionarMensagem('ia', 'Desculpe, ocorreu um erro. Tente novamente.');
+    });
+}
+
+function adicionarMensagem(tipo, texto) {
+    const chatArea = document.getElementById('chatArea');
+    const isUser = tipo === 'user';
+    
+    const html = `
+        <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-direction: ${isUser ? 'row-reverse' : 'row'};">
+            <div style="width: 36px; height: 36px; background: ${isUser ? 'var(--gradient-primary)' : 'var(--gradient-primary)'}; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i class="bi bi-${isUser ? 'person' : 'robot'}" style="font-size: 16px; color: white;"></i>
+            </div>
+            <div style="background: ${isUser ? 'var(--bg-tertiary)' : 'var(--bg-tertiary)'}; padding: 14px 18px; border-radius: ${isUser ? '16px 0 16px 16px' : '0 16px 16px 16px'}; max-width: 85%;">
+                <p style="margin: 0; font-size: 13px; color: var(--text-primary); white-space: pre-line; text-align: ${isUser ? 'right' : 'left'};">${texto}</p>
+            </div>
+        </div>
+    `;
+    
+    chatArea.insertAdjacentHTML('beforeend', html);
+    chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function mostrarTyping() {
+    const chatArea = document.getElementById('chatArea');
+    chatArea.insertAdjacentHTML('beforeend', `
+        <div id="typingIndicator" style="display: flex; gap: 12px; margin-bottom: 20px;">
+            <div style="width: 36px; height: 36px; background: var(--gradient-primary); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                <i class="bi bi-robot" style="font-size: 16px; color: white;"></i>
+            </div>
+            <div style="background: var(--bg-tertiary); padding: 14px 18px; border-radius: 0 16px 16px 16px;">
+                <div style="display: flex; gap: 4px;">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            </div>
+        </div>
+    `);
+    chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function removerTyping() {
+    const indicator = document.getElementById('typingIndicator');
+    if (indicator) indicator.remove();
+}
+
+function perguntaRapida(pergunta) {
+    document.getElementById('mensagemInput').value = pergunta;
+    enviarMensagem();
+}
+
+function limparChat() {
+    document.getElementById('chatArea').innerHTML = `
+        <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+            <div style="width: 36px; height: 36px; background: var(--gradient-primary); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                <i class="bi bi-robot" style="font-size: 16px; color: white;"></i>
+            </div>
+            <div style="background: var(--bg-tertiary); padding: 14px 18px; border-radius: 0 16px 16px 16px; max-width: 85%;">
+                <p style="margin: 0; font-size: 13px; color: var(--text-primary); line-height: 1.6;">
+                    Olá! Sou o assistente de gestão de obras.<br><br>
+                    Posso ajudar com:<br>
+                    <i class="bi bi-check2 me-2" style="color: #4ade80;"></i>Informações financeiras<br>
+                    <i class="bi bi-check2 me-2" style="color: #4ade80;"></i>Status e progresso das obras<br>
+                    <i class="bi bi-check2 me-2" style="color: #4ade80;"></i>Relatórios de custos<br>
+                    <i class="bi bi-check2 me-2" style="color: #4ade80;"></i>Alertas de risco<br><br>
+                    Como posso ajudar?
+                </p>
+            </div>
+        </div>
+    `;
+}
+</script>
+
+<style>
+.typing-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--text-muted);
+    border-radius: 50%;
+    animation: typing 1.4s infinite;
+}
+
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-6px); }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Editar' if role else 'Novo' }} Perfil - {{ nome_sistema }}{% endblock %}
+{% block page_title %}{{ 'Editar' if role else 'Novo' }} Perfil de Acesso{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('rbac.listar_roles') }}" class="btn btn-outline">
+    <i class="bi bi-arrow-left me-2"></i>Voltar
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Informações do Perfil</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nome" class="form-label">Nome *</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="nome" 
+                                   name="nome" 
+                                   value="{{ role.nome if role else '' }}"
+                                   required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="descricao" class="form-label">Descrição</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="descricao" 
+                                   name="descricao" 
+                                   value="{{ role.descricao if role else '' }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Permissões</h5>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-outline" onclick="selectAll()">
+                            <i class="bi bi-check-square me-1"></i>Selecionar Todas
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline" onclick="deselectAll()">
+                            <i class="bi bi-x-square me-1"></i>Desmarcar Todas
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% for modulo, perms in permissoes_por_modulo.items() %}
+                    <div class="mb-4">
+                        <h6 class="text-primary mb-3">
+                            <i class="bi bi-folder me-2"></i>{{ modulo|title }}
+                        </h6>
+                        <div class="row g-2">
+                            {% for perm in perms %}
+                            <div class="col-md-3">
+                                <div class="form-check">
+                                    <input class="form-check-input perm-checkbox" 
+                                           type="checkbox" 
+                                           name="permissoes" 
+                                           value="{{ perm.id }}" 
+                                           id="perm_{{ perm.id }}"
+                                           {% if role and perm.id in role_perm_ids %}checked{% endif %}>
+                                    <label class="form-check-label" for="perm_{{ perm.id }}">
+                                        {{ perm.acao|title }}
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="bi bi-check-circle me-2"></i>Salvar Perfil
+            </button>
+        </form>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Ajuda</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">Selecione as permissões que este perfil terá acesso.</p>
+                <ul class="text-muted small">
+                    <li><strong>ver</strong>: Apenas visualização</li>
+                    <li><strong>criar</strong>: Criar novos registros</li>
+                    <li><strong>editar</strong>: Editar registros existentes</li>
+                    <li><strong>excluir</strong>: Excluir registros</li>
+                    <li><strong>exportar</strong>: Exportar dados</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function selectAll() {
+    document.querySelectorAll('.perm-checkbox').forEach(cb => cb.checked = true);
+}
+
+function deselectAll() {
+    document.querySelectorAll('.perm-checkbox').forEach(cb => cb.checked = false);
+}
+</script>
+{% endblock %}
