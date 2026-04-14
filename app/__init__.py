@@ -159,7 +159,22 @@ def create_app():
     def uploaded_file(filename):
         from flask import send_from_directory
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-    
+
+    # Rota raiz simples para health check básico (sem banco de dados)
+    @app.route('/healthz')
+    def healthz_root():
+        """Health check para Render - sem dependência de banco"""
+        return {'status': 'ok', 'service': 'obras-pro'}, 200
+
+    # Rota raiz para verificar se app está rodando
+    @app.route('/')
+    def root():
+        """Rota raiz - redireciona para dashboard ou login"""
+        from flask import redirect, url_for, session
+        if 'usuario_id' in session:
+            return redirect(url_for('main.dashboard'))
+        return redirect(url_for('auth.login'))
+
     return app
 
 

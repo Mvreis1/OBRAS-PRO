@@ -86,14 +86,14 @@ def health_check():
         description: Status de saúde
     """
     from app.models import db
-    
+
     # Verificar banco de dados
     try:
         db.session.execute(db.text('SELECT 1'))
         db_status = 'healthy'
     except:
         db_status = 'unhealthy'
-    
+
     return jsonify({
         'status': 'ok' if db_status == 'healthy' else 'degraded',
         'timestamp': datetime.utcnow().isoformat(),
@@ -102,6 +102,37 @@ def health_check():
             'api': 'ok'
         }
     })
+
+
+@monitor_bp.route('/healthz')
+def healthz():
+    """
+    Health check para Render (sem autenticação)
+    O Render usa esta rota para verificar se o serviço está saudável
+    ---
+    tags:
+      - Monitoramento
+    responses:
+      200:
+        description: Status de saúde
+    """
+    from app.models import db
+
+    # Verificar banco de dados
+    try:
+        db.session.execute(db.text('SELECT 1'))
+        db_status = 'healthy'
+    except:
+        db_status = 'unhealthy'
+
+    return jsonify({
+        'status': 'ok' if db_status == 'healthy' else 'degraded',
+        'timestamp': datetime.utcnow().isoformat(),
+        'services': {
+            'database': db_status,
+            'api': 'ok'
+        }
+    }), 200
 
 
 @monitor_bp.route('/metrics')
