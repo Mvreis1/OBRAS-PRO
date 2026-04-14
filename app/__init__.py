@@ -73,6 +73,10 @@ def create_app():
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SQLALCHEMY_ECHO'] = False
     
+    # Configurações de pool para PostgreSQL
+    from app.config import SQLALCHEMY_ENGINE_OPTIONS
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = SQLALCHEMY_ENGINE_OPTIONS
+    
     db.init_app(app)
     
     # Flask-Login

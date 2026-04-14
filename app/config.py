@@ -103,9 +103,22 @@ MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB
 UPLOAD_ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx', 'xls', 'xlsx'}
 
 # Rate Limiting
-RATELIMIT_STORAGE_URL = os.environ.get('RATELIMIT_STORAGE_URL', 'memory://')
+# Em produção, usar Redis se disponível, senão memory
+if os.environ.get('FLASK_ENV') == 'production':
+    RATELIMIT_STORAGE_URL = os.environ.get('RATELIMIT_STORAGE_URL', 'memory://')
+else:
+    RATELIMIT_STORAGE_URL = os.environ.get('RATELIMIT_STORAGE_URL', 'memory://')
+
 RATELIMIT_DEFAULT = os.environ.get('RATELIMIT_DEFAULT', '100 per hour')
 RATELIMIT_LOGIN = os.environ.get('RATELIMIT_LOGIN', '10 per minute')
+
+# Configurações de Pool de Conexões (para PostgreSQL)
+SQLALCHEMY_ENGINE_OPTIONS = {
+    'pool_size': 10,
+    'max_overflow': 20,
+    'pool_timeout': 30,
+    'pool_recycle': 1800,
+}
 
 # Validação de produção
 def validate_production_config():
