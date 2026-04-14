@@ -11,6 +11,7 @@ from jinja2 import ChoiceLoader, FileSystemLoader
 from app.models import db
 from flask_caching import Cache
 from flasgger import Swagger
+from flask_login import LoginManager
 
 from app.config import (
     SECRET_KEY, SESSION_COOKIE_SECURE, SESSION_COOKIE_HTTPONLY,
@@ -73,6 +74,16 @@ def create_app():
     app.config['SQLALCHEMY_ECHO'] = False
     
     db.init_app(app)
+    
+    # Flask-Login
+    login_manager = LoginManager()
+    login_manager.login_view = 'auth.login'
+    login_manager.init_app(app)
+    
+    @login_manager.user_loader
+    def load_user(user_id):
+        from app.models import Usuario
+        return Usuario.query.get(int(user_id))
     
     # Flask-Migrate (Alembic) para gerenciamento de migrations
     migrate = Migrate(app, db)

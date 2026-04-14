@@ -3,6 +3,7 @@ Rotas de autenticação
 """
 import re
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
+from flask_login import login_required, login_user, logout_user, current_user
 from datetime import timedelta
 from werkzeug.security import check_password_hash
 from app.models import db, Empresa, Usuario
