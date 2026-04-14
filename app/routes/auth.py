@@ -3,7 +3,6 @@ Rotas de autenticação
 """
 import re
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
-from flask_login import login_required, login_user, logout_user, current_user
 from datetime import timedelta
 from werkzeug.security import check_password_hash
 from app.models import db, Empresa, Usuario
@@ -13,12 +12,11 @@ import pyotp
 
 
 def login_required(f):
-    """Decorator para rotas que exigem login"""
+    """Decorator para rotas que exigem login - simplificado para evitar timeouts"""
     from functools import wraps
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'usuario_id' not in session:
-            flash('Faça login para acessar esta página.', 'warning')
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
     return decorated_function

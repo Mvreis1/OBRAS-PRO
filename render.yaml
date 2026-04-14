@@ -3,7 +3,7 @@ services:
     name: obras-financeiro
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn run:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120 --access-logfile - --error-logfile -
+    startCommand: gunicorn run:app --bind 0.0.0.0:$PORT --workers 1 --threads 2 --timeout 300 --access-logfile - --error-logfile -
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
