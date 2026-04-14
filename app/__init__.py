@@ -155,6 +155,8 @@ def create_app():
             app.logger.info("✅ Tabelas do banco de dados criadas/verificadas")
         except Exception as e:
             app.logger.error(f"❌ Erro ao criar tabelas: {e}")
+            import traceback
+            app.logger.error(traceback.format_exc())
 
         # Inicializar dados básicos (roles, permissões)
         try:
@@ -166,9 +168,13 @@ def create_app():
                 app.logger.info("🌱 Inicializando roles e permissões...")
                 seed_permissoes()
                 seed_roles()
+                db.session.commit()  # Commit explícito
                 app.logger.info("✅ Dados iniciais criados")
         except Exception as e:
             app.logger.error(f"❌ Erro ao inicializar dados: {e}")
+            import traceback
+            app.logger.error(traceback.format_exc())
+            db.session.rollback()  # Rollback em caso de erro
     
     @app.route('/uploads/<filename>')
     def uploaded_file(filename):
@@ -180,6 +186,25 @@ def create_app():
     def healthz_root():
         """Health check para Render - sem dependência de banco"""
         return {'status': 'ok', 'service': 'obras-pro'}, 200
+
+    # Rota de diagnóstico do banco de dados
+    @app.route('/debug/db')
+    def debug_db():
+        """Diagnóstico do banco de dados"""
+        try:
+            from app.models.acesso import Role, Permissao
+            from app.models import Empresa, Usuario
+
+            tables = {
+                'roles': Role.query.count(),
+                'permissoes': Permissao.query.count(),
+                'empresas': Empresa.query.count(),
+                'usuarios': Usuario.query.count(),
+            }
+            return {'status': 'ok', 'tables': tables}, 200
+        except Exception as e:
+            import traceback
+            return {'status': 'error', 'error': str(e), 'traceback': traceback.format_exc()}, 500
 
     # Rota raiz para verificar se app está rodando
     @app.route('/')
