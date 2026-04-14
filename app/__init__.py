@@ -104,13 +104,21 @@ def create_app():
     from app.routes.auth import auth_bp
     csrf.exempt(auth_bp)
     
-    # Configurar logging estruturado
-    from app.utils.logging_utils import setup_logging
-    setup_logging(app)
+    # Configurar logging estruturado - apenas em desenvolvimento
+    if os.environ.get('FLASK_ENV') != 'production':
+        try:
+            from app.utils.logging_utils import setup_logging
+            setup_logging(app)
+        except Exception as e:
+            print(f"Logging nao inicializado: {e}")
     
-    # Configurar monitoramento
-    from app.utils.monitoring import init_monitoring
-    init_monitoring(app)
+    # Configurar monitoramento - apenas em desenvolvimento
+    if os.environ.get('FLASK_ENV') != 'production':
+        try:
+            from app.utils.monitoring import init_monitoring
+            init_monitoring(app)
+        except Exception as e:
+            print(f"Monitoramento nao inicializado: {e}")
     
     # Configurar backup automático - apenas em desenvolvimento
     if os.environ.get('FLASK_ENV') != 'production':
@@ -165,9 +173,9 @@ def create_app():
         # Criar tabelas se não existirem (necessário para deploy no Render)
         try:
             db.create_all()
-            app.logger.info("✅ Tabelas do banco de dados criadas/verificadas")
+            app.logger.info("Tabelas do banco de dados criadas/verificadas")
         except Exception as e:
-            app.logger.error(f"❌ Erro ao criar tabelas: {e}")
+            app.logger.error(f"Erro ao criar tabelas: {e}")
             import traceback
             app.logger.error(traceback.format_exc())
 
@@ -178,16 +186,16 @@ def create_app():
 
             # Verificar se já existe roles
             if not Role.query.first():
-                app.logger.info("🌱 Inicializando roles e permissões...")
+                app.logger.info("Inicializando roles e permissoes...")
                 seed_permissoes()
                 seed_roles()
-                db.session.commit()  # Commit explícito
-                app.logger.info("✅ Dados iniciais criados")
+                db.session.commit()
+                app.logger.info("Dados iniciais criados")
         except Exception as e:
-            app.logger.error(f"❌ Erro ao inicializar dados: {e}")
+            app.logger.error(f"Erro ao inicializar dados: {e}")
             import traceback
             app.logger.error(traceback.format_exc())
-            db.session.rollback()  # Rollback em caso de erro
+            db.session.rollback()
     
     @app.route('/uploads/<filename>')
     def uploaded_file(filename):
