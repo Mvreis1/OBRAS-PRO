@@ -209,15 +209,45 @@ def create_app():
     # Rota para criar conta de teste (apenas para desenvolvimento)
     @app.route('/setup-demo')
     def setup_demo():
-        """Cria conta de demonstração"""
+        """Cria conta de demonstração com seed simplificado"""
         try:
-            from app.models import Empresa, Usuario
-            from app.models.acesso import Role
-            from seed_rbac import seed_rbac
+            from app.models import Empresa, Usuario, db
+            from app.models.acesso import Role, Permissao, RolePermissao
 
-            # Executar seed se necessário
-            if Role.query.count() == 0:
-                seed_rbac()
+            # Criar role Administrador básico se não existir
+            admin_role = Role.query.filter_by(nome='Administrador').first()
+            if not admin_role:
+                admin_role = Role(
+                    nome='Administrador',
+                    descricao='Acesso total ao sistema',
+                    is_system=True
+                )
+                db.session.add(admin_role)
+                db.session.flush()
+
+            # Criar permissão básica
+            perm = Permissao.query.filter_by(nome='Acesso Total').first()
+            if not perm:
+                perm = Permissao(
+                    nome='Acesso Total',
+                    descricao='Acesso completo ao sistema',
+                    modulo='*',
+                    acao='*'
+                )
+                db.session.add(perm)
+                db.session.flush()
+
+            # Associar permissão ao role
+            assoc = RolePermissao.query.filter_by(
+                role_id=admin_role.id,
+                permissao_id=perm.id
+            ).first()
+            if not assoc:
+                assoc = RolePermissao(
+                    role_id=admin_role.id,
+                    permissao_id=perm.id
+                )
+                db.session.add(assoc)
 
             # Criar empresa demo
             empresa = Empresa.query.filter_by(slug='demo').first()
@@ -234,9 +264,6 @@ def create_app():
                 db.session.add(empresa)
                 db.session.flush()
 
-            # Buscar role Administrador
-            admin_role = Role.query.filter_by(nome='Administrador', is_system=True).first()
-
             # Criar usuário admin
             usuario = Usuario.query.filter_by(email='admin@demo.com').first()
             if not usuario:
@@ -247,7 +274,7 @@ def create_app():
                     username='admin',
                     cargo='Administrador',
                     role='admin',
-                    role_id=admin_role.id if admin_role else None,
+                    role_id=admin_role.id,
                     ativo=True
                 )
                 usuario.set_senha('demo123')
