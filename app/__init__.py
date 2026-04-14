@@ -51,13 +51,18 @@ def create_app():
     
     cache = Cache(app)
     
-    # Rate Limiter
-    limiter = Limiter(
-        app=app,
-        key_func=get_remote_address,
-        default_limits=[RATELIMIT_DEFAULT],
-        storage_uri=RATELIMIT_STORAGE_URL,
-    )
+    # Rate Limiter - desabilitado em produção para evitar 502
+    try:
+        limiter = Limiter(
+            app=app,
+            key_func=get_remote_address,
+            default_limits=[RATELIMIT_DEFAULT] if os.environ.get('FLASK_ENV') != 'production' else [],
+            storage_uri=RATELIMIT_STORAGE_URL,
+            enabled=os.environ.get('FLASK_ENV') != 'production',
+        )
+    except Exception as e:
+        app.logger.warning(f"Rate limiter nao inicializado: {e}")
+        limiter = None
     
     # Armazenar limiter no app para uso nas rotas
     app.limiter = limiter
@@ -107,13 +112,21 @@ def create_app():
     from app.utils.monitoring import init_monitoring
     init_monitoring(app)
     
-    # Configurar backup automático
-    from app.utils.backup import setup_scheduled_backups
-    setup_scheduled_backups(app)
+    # Configurar backup automático - apenas em desenvolvimento
+    if os.environ.get('FLASK_ENV') != 'production':
+        try:
+            from app.utils.backup import setup_scheduled_backups
+            setup_scheduled_backups(app)
+        except Exception as e:
+            app.logger.warning(f"Backup automatico nao inicializado: {e}")
     
-    # Swagger para documentação da API
-    from app.routes.api import swagger_template
-    Swagger(app, template=swagger_template)
+    # Swagger para documentação da API - apenas em desenvolvimento
+    if os.environ.get('FLASK_ENV') != 'production':
+        try:
+            from app.routes.api import swagger_template
+            Swagger(app, template=swagger_template)
+        except Exception as e:
+            app.logger.warning(f"Swagger nao inicializado: {e}")
     
     # Registrar blueprints
     from app.routes import auth_bp, main_bp, ia_bp, banco_bp

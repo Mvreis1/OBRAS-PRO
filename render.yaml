@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: obras-financeiro
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn run:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120 --access-logfile - --error-logfile -
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: obras-db
+          property: connectionString
+    healthCheckPath: /healthz
+    autoDeploy: true
+
+databases:
+  - name: obras-db
+    databaseName: obras_financeiro
+    user: obras_user
+    plan: free
