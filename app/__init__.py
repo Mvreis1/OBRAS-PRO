@@ -317,14 +317,13 @@ def create_app():
             import traceback
             return {'status': 'error', 'error': str(e), 'traceback': traceback.format_exc()}, 500
 
-    # Rota para popular dados fictícios de teste
+    # Rota para popular dados fictícios de teste - SIMPLIFICADA
     @app.route('/setup-dados-teste')
     def setup_dados_teste():
-        """Popula o banco com dados fictícios para demonstração"""
+        """Popula o banco com dados fictícios minimos para demonstração"""
         try:
-            from datetime import date, timedelta
-            from app.models import db, Empresa, Usuario, Obra, Lancamento
-            from app.models.banco import ContaBancaria
+            from datetime import date
+            from app.models import db, Empresa, Obra, Lancamento
 
             # Buscar empresa demo
             empresa = Empresa.query.filter_by(slug='demo').first()
@@ -341,166 +340,58 @@ def create_app():
                     'message': 'Dados de teste ja existem para esta empresa'
                 }, 200
 
-            # Criar obras
-            obras_dados = [
-                {
-                    'nome': 'Edificio Alpha',
-                    'descricao': 'Construcao de edificio residencial com 20 andares',
-                    'endereco': 'Av. Principal, 1000 - Centro',
-                    'orcamento_previsto': 5000000,
-                    'data_inicio': date(2025, 1, 15),
-                    'data_fim_prevista': date(2027, 6, 30),
-                    'status': 'Em Execucao',
-                    'progresso': 45,
-                    'responsavel': 'Eng. Carlos Silva',
-                    'cliente': 'Construtora Alpha Ltda'
-                },
-                {
-                    'nome': 'Residencial Parque Verde',
-                    'descricao': 'Conjunto habitacional com 50 casas',
-                    'endereco': 'Rua das Flores, 500 - Jardim Verde',
-                    'orcamento_previsto': 2800000,
-                    'data_inicio': date(2025, 3, 1),
-                    'data_fim_prevista': date(2026, 12, 31),
-                    'status': 'Em Execucao',
-                    'progresso': 70,
-                    'responsavel': 'Eng. Maria Santos',
-                    'cliente': 'Imobiliaria Verde'
-                },
-                {
-                    'nome': 'Shopping Center Norte',
-                    'descricao': 'Shopping de medio porte com 3 pavimentos',
-                    'endereco': 'BR-101, Km 50 - Norte',
-                    'orcamento_previsto': 8500000,
-                    'data_inicio': date(2024, 8, 1),
-                    'data_fim_prevista': date(2026, 8, 1),
-                    'status': 'Em Execucao',
-                    'progresso': 80,
-                    'responsavel': 'Eng. Roberto Oliveira',
-                    'cliente': 'Grupo Center Norte'
-                },
-                {
-                    'nome': 'Escola Municipal',
-                    'descricao': 'Construcao de escola com 12 salas',
-                    'endereco': 'Rua da Educacao, 200 - Bairro Esperanca',
-                    'orcamento_previsto': 1200000,
-                    'data_inicio': date(2025, 6, 1),
-                    'data_fim_prevista': date(2026, 3, 1),
-                    'status': 'Em Execucao',
-                    'progresso': 25,
-                    'responsavel': 'Eng. Ana Paula',
-                    'cliente': 'Prefeitura Municipal'
-                },
-                {
-                    'nome': 'Hospital Regional',
-                    'descricao': 'Hospital com 200 leitos',
-                    'endereco': 'Av. Saude, 1000 - Zona Hospitalar',
-                    'orcamento_previsto': 15000000,
-                    'data_inicio': date(2024, 1, 1),
-                    'data_fim_prevista': date(2028, 12, 31),
-                    'status': 'Em Execucao',
-                    'progresso': 15,
-                    'responsavel': 'Dr. Joao Paulo',
-                    'cliente': 'Governo do Estado'
-                }
-            ]
+            # Criar apenas 1 obra simples
+            obra = Obra(
+                empresa_id=empresa.id,
+                nome='Obra Demo',
+                descricao='Obra de demonstração',
+                endereco='Rua Demo, 123',
+                orcamento_previsto=100000,
+                data_inicio=date(2025, 1, 1),
+                data_fim_prevista=date(2025, 12, 31),
+                status='Em Execucao',
+                progresso=50,
+                responsavel='Eng. Demo',
+                cliente='Cliente Demo'
+            )
+            db.session.add(obra)
+            db.session.flush()
 
-            obras = []
-            for dados in obras_dados:
-                obra = Obra(empresa_id=empresa.id, **dados)
-                db.session.add(obra)
-                db.session.flush()
-                obras.append(obra)
-
-            # Criar lançamentos
-            descricoes_despesas = [
-                ('Materiais de Construcao', 'Cimento, argamassa, tijolos'),
-                ('Mao de Obra', 'Servicos de pedreiro'),
-                ('Equipamentos', 'Locacao de betoneira'),
-                ('Servicos Profissionais', 'Projeto arquitetonico'),
-                ('Transporte', 'Frete de materiais'),
-                ('Energia Eletrica', 'Instalacao provisoria'),
-                ('Combustivel', 'Para maquinas e veiculos'),
-                ('Alimentacao', 'Refeicoes da equipe'),
-                ('Uniformes e EPIs', 'Equipamentos de protecao'),
-                ('Manutencao', 'Manutencao de equipamentos'),
-            ]
-
-            descricoes_receita = [
-                ('Receita de Vendas', 'Venda de unidades'),
-                ('Financiamento', 'Parcela do banco'),
-                ('Investimento', 'Capital de investidores'),
-            ]
-
-            base_date = date(2025, 1, 1)
-            total_lancamentos = 0
-
-            for i, obra in enumerate(obras):
-                valor_obra = obra.orcamento_previsto
-
-                # Criar despesas
-                for j in range(8):
-                    data_lanc = base_date + timedelta(days=i*30 + j*5)
-                    cat, desc = descricoes_despesas[j % len(descricoes_despesas)]
-                    valor = (valor_obra * 0.08) + (j * 1500)
-
-                    lanc = Lancamento(
-                        empresa_id=empresa.id,
-                        obra_id=obra.id,
-                        descricao=desc,
-                        categoria=cat,
-                        tipo='Despesa',
-                        valor=valor,
-                        data=data_lanc,
-                        forma_pagamento='Transferencia',
-                        status_pagamento='Pago',
-                        parcelas=1
-                    )
-                    db.session.add(lanc)
-                    total_lancamentos += 1
-
-                # Criar receitas
-                for k in range(5):
-                    data_lanc = base_date + timedelta(days=i*30 + k*7 + 3)
-                    cat, desc = descricoes_receita[k % len(descricoes_receita)]
-                    valor = (valor_obra * 0.10) + (k * 5000)
-
-                    lanc = Lancamento(
-                        empresa_id=empresa.id,
-                        obra_id=obra.id,
-                        descricao=desc,
-                        categoria=cat,
-                        tipo='Receita',
-                        valor=valor,
-                        data=data_lanc,
-                        forma_pagamento='Transferencia',
-                        status_pagamento='Pago',
-                        parcelas=1
-                    )
-                    db.session.add(lanc)
-                    total_lancamentos += 1
-
-            # Criar contas bancárias
-            contas_bancarias = [
-                {'nome': 'Caixa Geral', 'banco': 'Banco do Brasil', 'agencia': '1234', 'conta': '10001-1', 'tipo': 'Corrente', 'saldo_inicial': 50000},
-                {'nome': 'Conta Obra Alpha', 'banco': 'Caixa', 'agencia': '5678', 'conta': '20002-2', 'tipo': 'Corrente', 'saldo_inicial': 100000},
-                {'nome': 'PIX Empresarial', 'banco': 'Nubank', 'agencia': '-', 'conta': '12345678-9', 'tipo': 'PIX', 'saldo_inicial': 25000},
-            ]
-
-            for dados in contas_bancarias:
-                conta = ContaBancaria(empresa_id=empresa.id, **dados)
-                conta.saldo_atual = dados['saldo_inicial']
-                db.session.add(conta)
-
+            # Criar apenas 2 lançamentos simples
+            lanc1 = Lancamento(
+                empresa_id=empresa.id,
+                obra_id=obra.id,
+                descricao='Material de construcao',
+                categoria='Materiais',
+                tipo='Despesa',
+                valor=5000,
+                data=date(2025, 1, 15),
+                forma_pagamento='Transferencia',
+                status_pagamento='Pago',
+                parcelas=1
+            )
+            lanc2 = Lancamento(
+                empresa_id=empresa.id,
+                obra_id=obra.id,
+                descricao='Receita de vendas',
+                categoria='Vendas',
+                tipo='Receita',
+                valor=15000,
+                data=date(2025, 1, 20),
+                forma_pagamento='Transferencia',
+                status_pagamento='Pago',
+                parcelas=1
+            )
+            db.session.add(lanc1)
+            db.session.add(lanc2)
             db.session.commit()
 
             return {
                 'status': 'ok',
                 'message': 'Dados de teste criados com sucesso!',
                 'dados_criados': {
-                    'obras': len(obras),
-                    'lancamentos': total_lancamentos,
-                    'contas_bancarias': len(contas_bancarias)
+                    'obras': 1,
+                    'lancamentos': 2
                 }
             }, 200
 
