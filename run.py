@@ -80,6 +80,20 @@ def create_cli_commands(app):
         print(f"   - Sem role_id: {sem_role}")
         print(f"   - Com role legacy: {com_legacy}")
 
+    @app.cli.command()
+    def seed_db():
+        """Executa seed de dados iniciais"""
+        from seed_rbac import seed_rbac
+        
+        print("🌱 Executando seed do banco de dados...")
+        try:
+            seed_rbac()
+            print("✅ Seed concluído com sucesso!")
+        except Exception as e:
+            print(f"❌ Erro no seed: {e}")
+            import traceback
+            print(traceback.format_exc())
+
 
 if __name__ == '__main__':
     from app.config import validate_production_config
