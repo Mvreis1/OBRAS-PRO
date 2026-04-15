@@ -202,29 +202,46 @@ def nova_obra():
     empresa_id = session.get('empresa_id')
     empresa = db.session.get(Empresa, empresa_id)
     
+    if not empresa:
+        flash('Empresa não encontrada.', 'danger')
+        return redirect(url_for('auth.login'))
+    
     if empresa.obras.count() >= empresa.max_obras:
         flash('Limite de obras atingido. Faça upgrade do plano.', 'warning')
         return redirect(url_for('main.obras'))
     
     if request.method == 'POST':
-        obra = Obra(
-            empresa_id=empresa_id,
-            nome=request.form.get('nome'),
-            descricao=request.form.get('descricao'),
-            endereco=request.form.get('endereco'),
-            orcamento_previsto=sanitize_float(request.form.get('orcamento_previsto')),
-            data_inicio=datetime.strptime(request.form.get('data_inicio'), '%Y-%m-%d').date() if request.form.get('data_inicio') else None,
-            data_fim_prevista=datetime.strptime(request.form.get('data_fim_prevista'), '%Y-%m-%d').date() if request.form.get('data_fim_prevista') else None,
-            status=request.form.get('status'),
-            progresso=sanitize_int(request.form.get('progresso'), min_val=0, max_val=100),
-            responsavel=request.form.get('responsavel'),
-            cliente=request.form.get('cliente')
-        )
-        db.session.add(obra)
-        db.session.commit()
-        log_atividade('Criar obra', 'Obra', obra.id, f'Nova obra: {obra.nome}')
-        flash('Obra cadastrada com sucesso!', 'success')
-        return redirect(url_for('main.obras'))
+        try:
+            nome = request.form.get('nome', '').strip()
+            if not nome:
+                flash('Nome da obra é obrigatório.', 'danger')
+                return render_template('main/obra_form.html', obra=None)
+            
+            obra = Obra(
+                empresa_id=empresa_id,
+                nome=nome,
+                descricao=request.form.get('descricao'),
+                endereco=request.form.get('endereco'),
+                orcamento_previsto=sanitize_float(request.form.get('orcamento_previsto')),
+                data_inicio=datetime.strptime(request.form.get('data_inicio'), '%Y-%m-%d').date() if request.form.get('data_inicio') else None,
+                data_fim_prevista=datetime.strptime(request.form.get('data_fim_prevista'), '%Y-%m-%d').date() if request.form.get('data_fim_prevista') else None,
+                status=request.form.get('status') or 'Planejamento',
+                progresso=sanitize_int(request.form.get('progresso'), min_val=0, max_val=100) or 0,
+                responsavel=request.form.get('responsavel'),
+                cliente=request.form.get('cliente')
+            )
+            db.session.add(obra)
+            db.session.commit()
+            log_atividade('Criar obra', 'Obra', obra.id, f'Nova obra: {obra.nome}')
+            flash('Obra cadastrada com sucesso!', 'success')
+            return redirect(url_for('main.obras'))
+        except Exception as e:
+            db.session.rollback()
+            import traceback
+            current_app.logger.error(f"Erro ao criar obra: {e}")
+            current_app.logger.error(traceback.format_exc())
+            flash(f'Erro ao cadastrar obra: {str(e)}', 'danger')
+            return render_template('main/obra_form.html', obra=None)
     
     return render_template('main/obra_form.html', obra=None)
 

@@ -1,7 +1,7 @@
 """
 Rotas de fornecedores
 """
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, current_app
 from datetime import datetime, date
 from app.models import db, Empresa, Obra
 from app.models.fornecedores import Fornecedor, CompraFornecedor
@@ -170,28 +170,39 @@ def excluir_fornecedor(fornecedor_id):
 @login_required
 def nova_compra(fornecedor_id):
     """Nova compra/fornecimento"""
-    empresa_id = session.get('empresa_id')
-    fornecedor = Fornecedor.query.filter_by(id=fornecedor_id, empresa_id=empresa_id).first_or_404()
-    obras = Obra.query.filter_by(empresa_id=empresa_id).all()
-    
-    if request.method == 'POST':
-        compra = CompraFornecedor(
-            empresa_id=empresa_id,
-            fornecedor_id=fornecedor_id,
-            obra_id=request.form.get('obra_id') or None,
-            descricao=request.form.get('descricao'),
-            valor=sanitize_float(request.form.get('valor')),
-            data=datetime.strptime(request.form.get('data'), '%Y-%m-%d').date() if request.form.get('data') else date.today(),
-            status=request.form.get('status'),
-            observacoes=request.form.get('observacoes')
-        )
-        db.session.add(compra)
-        db.session.commit()
+    try:
+        empresa_id = session.get('empresa_id')
+        fornecedor = Fornecedor.query.filter_by(id=fornecedor_id, empresa_id=empresa_id).first_or_404()
+        obras = Obra.query.filter_by(empresa_id=empresa_id).limit(50).all()
         
-        flash('Compra registrada!', 'success')
-        return redirect(url_for('fornecedores.fornecedor_detalhe', fornecedor_id=fornecedor_id))
-    
-    return render_template('main/compra_form.html', fornecedor=fornecedor, compra=None, obras=obras)
+        if request.method == 'POST':
+            try:
+                compra = CompraFornecedor(
+                    empresa_id=empresa_id,
+                    fornecedor_id=fornecedor_id,
+                    obra_id=request.form.get('obra_id') or None,
+                    descricao=request.form.get('descricao'),
+                    valor=sanitize_float(request.form.get('valor')),
+                    data=datetime.strptime(request.form.get('data'), '%Y-%m-%d').date() if request.form.get('data') else date.today(),
+                    status=request.form.get('status') or 'Pendente',
+                    observacoes=request.form.get('observacoes')
+                )
+                db.session.add(compra)
+                db.session.commit()
+                
+                flash('Compra registrada!', 'success')
+                return redirect(url_for('fornecedores.fornecedor_detalhe', fornecedor_id=fornecedor_id))
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Erro ao registrar compra: {str(e)}', 'danger')
+        
+        return render_template('main/compra_form.html', fornecedor=fornecedor, compra=None, obras=obras)
+    except Exception as e:
+        import traceback
+        current_app.logger.error(f"Erro na rota nova_compra: {e}")
+        current_app.logger.error(traceback.format_exc())
+        flash('Erro ao carregar página de compra.', 'danger')
+        return redirect(url_for('fornecedores.fornecedores'))
 
 
 @fornecedores_bp.route('/fornecedor/<int:fornecedor_id>/compra/<int:compra_id>/pagar', methods=['POST'])

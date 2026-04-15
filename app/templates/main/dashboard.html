@@ -25,28 +25,42 @@
 </style>
 
 <script>
+// Carregar estado salvo ao iniciar
+document.addEventListener('DOMContentLoaded', function() {
+    const valoresEscondidos = localStorage.getItem('valoresEscondidos') === 'true';
+    if (valoresEscondidos) {
+        aplicarEstadoValores(true);
+    }
+});
+
 function toggleValores() {
+    const btn = document.getElementById('btnToggleValores');
+    const escondido = !btn.classList.contains('valores-escondidos');
+    
+    aplicarEstadoValores(escondido);
+    
+    // Salvar estado no localStorage
+    localStorage.setItem('valoresEscondidos', escondido);
+}
+
+function aplicarEstadoValores(escondido) {
     const valores = document.querySelectorAll('.valor-mascarado');
     const btn = document.getElementById('btnToggleValores');
-    const icon = document.getElementById('iconToggleValores');
-    const escondido = btn.classList.contains('valores-escondidos');
     
     valores.forEach(v => {
         if (escondido) {
-            v.classList.add('mostrar');
-        } else {
             v.classList.remove('mostrar');
+        } else {
+            v.classList.add('mostrar');
         }
     });
     
     if (escondido) {
-        btn.classList.remove('valores-escondidos');
-        icon.className = 'bi bi-eye-slash';
-        btn.innerHTML = '<i class="bi bi-eye-slash" id="iconToggleValores"></i> Esconder Valores';
-    } else {
         btn.classList.add('valores-escondidos');
-        icon.className = 'bi bi-eye';
         btn.innerHTML = '<i class="bi bi-eye" id="iconToggleValores"></i> Mostrar Valores';
+    } else {
+        btn.classList.remove('valores-escondidos');
+        btn.innerHTML = '<i class="bi bi-eye-slash" id="iconToggleValores"></i> Esconder Valores';
     }
 }
 </script>
