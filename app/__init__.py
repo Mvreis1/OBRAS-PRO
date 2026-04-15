@@ -237,6 +237,39 @@ def create_app():
             import traceback
             return {'status': 'error', 'error': str(e), 'traceback': traceback.format_exc()}, 500
 
+    # Rota de diagnóstico de usuário específico
+    @app.route('/debug/user/<email>')
+    def debug_user(email):
+        """Diagnóstico de usuário específico"""
+        try:
+            from app.models import Usuario
+            usuario = Usuario.query.filter_by(email=email).first()
+            if usuario:
+                return {
+                    'status': 'ok',
+                    'usuario': {
+                        'id': usuario.id,
+                        'email': usuario.email,
+                        'username': usuario.username,
+                        'ativo': usuario.ativo,
+                        'empresa_id': usuario.empresa_id,
+                        'role_id': usuario.role_id,
+                        'senha_hash_prefix': usuario.senha_hash[:20] if usuario.senha_hash else None,
+                        'two_factor_enabled': usuario.two_factor_enabled,
+                    }
+                }, 200
+            else:
+                # Listar todos os usuários
+                usuarios = Usuario.query.all()
+                return {
+                    'status': 'not_found',
+                    'email_procurado': email,
+                    'usuarios_existentes': [{'id': u.id, 'email': u.email} for u in usuarios]
+                }, 404
+        except Exception as e:
+            import traceback
+            return {'status': 'error', 'error': str(e), 'traceback': traceback.format_exc()}, 500
+
     # Rota para criar conta de teste (apenas para desenvolvimento)
     @app.route('/setup-demo')
     def setup_demo():
@@ -425,6 +458,43 @@ def create_app():
             return {'status': 'ok', 'empresas': count}, 200
         except Exception as e:
             return {'status': 'error', 'error': str(e)}, 500
+
+    # Rota para testar login via API
+    @app.route('/test-login', methods=['POST'])
+    def test_login():
+        """Testa login e retorna diagnóstico"""
+        try:
+            from app.models import Usuario
+            data = request.get_json() or request.form
+            email = data.get('email', '').strip().lower()
+            senha = data.get('senha', '')
+            
+            usuario = Usuario.query.filter_by(email=email, ativo=True).first()
+            
+            if not usuario:
+                return {
+                    'status': 'error',
+                    'message': 'Usuario nao encontrado',
+                    'email': email,
+                    'total_usuarios': Usuario.query.count()
+                }, 404
+            
+            senha_ok = usuario.verificar_senha(senha)
+            
+            return {
+                'status': 'ok' if senha_ok else 'senha_incorreta',
+                'usuario_encontrado': True,
+                'senha_correta': senha_ok,
+                'usuario': {
+                    'id': usuario.id,
+                    'email': usuario.email,
+                    'ativo': usuario.ativo,
+                    'empresa_id': usuario.empresa_id,
+                }
+            }, 200
+        except Exception as e:
+            import traceback
+            return {'status': 'error', 'error': str(e), 'traceback': traceback.format_exc()}, 500
 
     # Rota raiz para verificar se app está rodando
     @app.route('/')
