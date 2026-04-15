@@ -487,6 +487,7 @@ def create_app():
     def test_login():
         """Testa login e retorna diagnóstico"""
         try:
+            from flask import request
             from app.models import Usuario
             data = request.get_json() or request.form
             email = data.get('email', '').strip().lower()
