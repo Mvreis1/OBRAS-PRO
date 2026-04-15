@@ -98,11 +98,6 @@ def config_email():
     return render_template('main/config_email.html', config=config)
 
 
-def gerar_alertas(empresa_id):
-    """Wrapper para usar o helper otimizado"""
-    _gerar_alertas(empresa_id)
-
-
 @notif_bp.route('/api/notificacoes/nao-lidas')
 @login_required
 def api_nao_lidas():
@@ -120,5 +115,5 @@ def api_nao_lidas():
 def api_gerar_alertas():
     """API para gerar alertas manualmente"""
     empresa_id = session.get('empresa_id')
-    gerar_alertas(empresa_id)
+    _gerar_alertas(empresa_id)
     return jsonify({'success': True})
