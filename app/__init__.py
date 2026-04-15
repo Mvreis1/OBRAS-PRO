@@ -519,8 +519,9 @@ def create_app():
             import traceback
             return {'status': 'error', 'error': str(e), 'traceback': traceback.format_exc()}, 500
     
-    # Exempt rotas de debug do CSRF
+    # Exempt rotas de debug do CSRF (deve ser feito após definir as rotas)
     csrf.exempt(test_login)
+    csrf.exempt(debug_config)
 
     # Rota raiz para verificar se app está rodando
     @app.route('/')
