@@ -4,61 +4,51 @@ Centralized settings for production deployment
 """
 
 import multiprocessing
-from pathlib import Path
+import os
 
-from decouple import AutoConfig
-
-# Setup decouple: auto-detecta .env no projeto
-config = AutoConfig(search_path=str(Path(__file__).resolve().parent))
+# Helper para ler variáveis de ambiente
+def get_env(key, default):
+    """Get environment variable with default"""
+    return os.environ.get(key, default)
 
 # Server socket
-bind = f"0.0.0.0:{config('PORT', default='5000')}"
+bind = f"0.0.0.0:{get_env('PORT', '5000')}"
 backlog = 2048
 
 # Worker processes
-workers = int(config('GUNICORN_WORKERS', default=multiprocessing.cpu_count() * 2 + 1))
-worker_class = config('GUNICORN_WORKER_CLASS', default='gthread')
-threads = int(config('GUNICORN_THREADS', default='4'))
+workers = int(get_env('GUNICORN_WORKERS', multiprocessing.cpu_count() * 2 + 1))
+worker_class = get_env('GUNICORN_WORKER_CLASS', 'gthread')
+threads = int(get_env('GUNICORN_THREADS', '4'))
 worker_connections = 1000
-max_requests = int(config('GUNICORN_MAX_REQUESTS', default='1000'))
-max_requests_jitter = int(config('GUNICORN_MAX_REQUESTS_JITTER', default='50'))
+max_requests = int(get_env('GUNICORN_MAX_REQUESTS', '1000'))
+max_requests_jitter = int(get_env('GUNICORN_MAX_REQUESTS_JITTER', '50'))
 
 # Timeout
-graceful_timeout = int(config('GUNICORN_GRACEFUL_TIMEOUT', default='30'))
-timeout = int(config('GUNICORN_TIMEOUT', default='120'))
-keepalive = int(config('GUNICORN_KEEPALIVE', default='5'))
+graceful_timeout = int(get_env('GUNICORN_GRACEFUL_TIMEOUT', '30'))
+timeout = int(get_env('GUNICORN_TIMEOUT', '120'))
+keepalive = int(get_env('GUNICORN_KEEPALIVE', '5'))
 
 # Restart workers after this many requests, to help prevent memory leaks
 requests = max_requests
 requests_jitter = max_requests_jitter
 
 # Logging
-accesslog = config('GUNICORN_ACCESS_LOG', default='-')  # '-' = stdout
-errorlog = config('GUNICORN_ERROR_LOG', default='-')
-loglevel = config('GUNICORN_LOG_LEVEL', default='info')
+accesslog = get_env('GUNICORN_ACCESS_LOG', '-')  # '-' = stdout
+errorlog = get_env('GUNICORN_ERROR_LOG', '-')
+loglevel = get_env('GUNICORN_LOG_LEVEL', 'info')
 access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" %(D)s'
 
-# StatsD monitoring (optional)
-# statsd_host = 'localhost:8125'
-# statsd_prefix = 'obras_pro'
-
 # Process naming
-proc_name = 'obras-pro'
+proc_name = 'obras-financeiro'
 
 # Server mechanics
 preload_app = True
 daemon = False
-pidfile = '/tmp/obras-pro.pid'
 
 # Worker temporary directory
 worker_tmp_dir = '/dev/shm'  # Use tmpfs for better performance
 
-# SSL (if not using nginx reverse proxy)
-# keyfile = "/path/to/keyfile"
-# certfile = "/path/to/certfile"
-
-# When True, closing master process will refuse new connections but wait for all requests to finish.
-# This is useful for graceful shutdown
+# Enable stdio inheritance
 enable_stdio_inheritance = True
 
 
@@ -90,13 +80,3 @@ def post_fork(server, worker):
 def post_worker_init(worker):
     """Called after a worker has been initialized."""
     worker.log.debug("Worker %s initialized", worker.pid)
-
-
-def worker_int(worker):
-    """Called when a worker receives the INT signal."""
-    worker.log.warning("Worker %s received INT signal", worker.pid)
-
-
-def worker_abort(worker):
-    """Called when a worker receives the ABORT signal."""
-    worker.log.warning("Worker %s received ABORT signal", worker.pid)
