@@ -2,7 +2,7 @@
 {% from "macros/paginacao.html" import renderizar_paginacao %}
 
 {% block title %}Obras - {{ nome_sistema }}{% endblock %}
-{% block page_title %}Gestao de Obras{% endblock %}
+{% block page_title %}Gestão de Obras{% endblock %}
 
 {% block topbar_actions %}
 <div style="display: flex; gap: 10px;">
@@ -36,7 +36,7 @@
                 <select class="form-select" style="background: var(--bg-tertiary);">
                     <option value="">Ordenar por</option>
                     <option value="nome">Nome</option>
-                    <option value="orcamento">Orcamento</option>
+                    <option value="orcamento">Orçamento</option>
                     <option value="progresso">Progresso</option>
                 </select>
             </div>
@@ -105,7 +105,7 @@
                 <!-- Financial Info -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px 0; border-top: 1px solid var(--border-subtle); border-bottom: 1px solid var(--border-subtle);">
                     <div>
-                        <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Orcamento</div>
+                        <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Orçamento</div>
                         <div style="font-size: 14px; font-weight: 600; color: var(--text-primary);">{{ obra.orcamento_previsto|format_currency }}</div>
                     </div>
                     <div>
@@ -172,8 +172,8 @@
             <div class="col-md-3">
                 <div style="font-size: 24px; font-weight: 700; color: #818cf8;">
                     {{ obras|selectattr('status', 'equalto', 'Em Execução')|list|length }}
-                    ...
-                    <div style="font-size: 12px; color: var(--text-muted);">Em Execução</div>
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted);">Em Execução</div>
             </div>
             <div class="col-md-3">
                 <div style="font-size: 24px; font-weight: 700; color: #fbbf24;">
