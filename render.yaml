@@ -2,8 +2,9 @@ services:
   - type: web
     name: obras-financeiro
     runtime: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn run:app --bind 0.0.0.0:$PORT --workers 1 --threads 2 --timeout 300 --access-logfile - --error-logfile -
+    plan: standard
+    buildCommand: ./build.sh
+    startCommand: ./start.sh
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
@@ -15,8 +16,15 @@ services:
         fromDatabase:
           name: obras-db
           property: connectionString
+      - key: RATELIMIT_STORAGE_URL
+        value: memory://
+      - key: CACHE_TYPE
+        value: simple
+      - key: PYTHONUNBUFFERED
+        value: "1"
     healthCheckPath: /healthz
     autoDeploy: true
+    numInstances: 1
 
 databases:
   - name: obras-db

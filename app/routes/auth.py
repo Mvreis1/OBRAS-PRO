@@ -8,7 +8,14 @@ from werkzeug.security import check_password_hash
 from app.models import db, Empresa, Usuario
 from app.utils import get_empresa_id
 from app.utils.validacao import validate_email, validate_password, validate_cnpj_format
-import pyotp
+
+# Import opcional de pyotp com fallback
+try:
+    import pyotp
+    PYOTP_AVAILABLE = True
+except ImportError:
+    PYOTP_AVAILABLE = False
+    pyotp = None
 
 
 def login_required(f):

@@ -21,3 +21,4 @@ Flasgger==0.9.7.1
 APScheduler==3.10.4
 psutil==5.9.8
 Flask-Login==0.6.3
+bcrypt==4.1.2

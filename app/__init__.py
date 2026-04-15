@@ -112,13 +112,12 @@ def create_app():
         except Exception as e:
             print(f"Logging nao inicializado: {e}")
     
-    # Configurar monitoramento - apenas em desenvolvimento
-    if os.environ.get('FLASK_ENV') != 'production':
-        try:
-            from app.utils.monitoring import init_monitoring
-            init_monitoring(app)
-        except Exception as e:
-            print(f"Monitoramento nao inicializado: {e}")
+    # Configurar monitoramento - sempre registrar health check (necessário para Render)
+    try:
+        from app.utils.monitoring import init_monitoring
+        init_monitoring(app)
+    except Exception as e:
+        print(f"Monitoramento nao inicializado: {e}")
     
     # Configurar backup automático - apenas em desenvolvimento
     if os.environ.get('FLASK_ENV') != 'production':
