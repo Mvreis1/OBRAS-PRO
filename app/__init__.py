@@ -459,6 +459,29 @@ def create_app():
         except Exception as e:
             return {'status': 'error', 'error': str(e)}, 500
 
+    # Rota para verificar configuração do banco
+    @app.route('/debug/config')
+    def debug_config():
+        """Verifica configuração do banco"""
+        db_url = os.environ.get('DATABASE_URL', 'NÃO CONFIGURADO')
+        # Ocultar senha da URL
+        if db_url != 'NÃO CONFIGURADO' and '://' in db_url:
+            parts = db_url.split('@')
+            if len(parts) > 1:
+                db_url_display = parts[0].split('://')[0] + '://***@' + parts[1]
+            else:
+                db_url_display = db_url
+        else:
+            db_url_display = db_url
+        
+        return {
+            'status': 'ok',
+            'database_url_configured': db_url != 'NÃO CONFIGURADO',
+            'database_url': db_url_display,
+            'sqlalchemy_database_uri': app.config.get('SQLALCHEMY_DATABASE_URI', 'NÃO CONFIGURADO'),
+            'flask_env': os.environ.get('FLASK_ENV', 'NÃO CONFIGURADO'),
+        }, 200
+
     # Rota para testar login via API
     @app.route('/test-login', methods=['POST'])
     def test_login():
