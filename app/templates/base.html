@@ -651,12 +651,12 @@
             </div>
             
             <div class="nav-section">
-                <div class="nav-section-title">Gestao</div>
+                <div class="nav-section-title">Gestão</div>
                 <a href="{{ url_for('main.obras') }}" class="nav-item {% if 'obra' in request.endpoint and 'editar' not in request.endpoint %}active{% endif %}">
                     <i class="bi bi-building"></i> Obras
                 </a>
                 <a href="{{ url_for('main.lancamentos') }}" class="nav-item {% if 'lancamento' in request.endpoint %}active{% endif %}">
-                    <i class="bi bi-receipt"></i> Lancamentos
+                    <i class="bi bi-receipt"></i> Lançamentos
                 </a>
                 <a href="{{ url_for('contratos.contratos') }}" class="nav-item {% if 'contrato' in request.endpoint %}active{% endif %}">
                     <i class="bi bi-file-earmark-text"></i> Contratos
@@ -681,14 +681,14 @@
                     <i class="bi bi-chat-square-dots"></i> Assistente IA
                 </a>
                 <a href="{{ url_for('auth.configurar_2fa') }}" class="nav-item {% if '2fa' in request.endpoint %}active{% endif %}">
-                    <i class="bi bi-shield-lock"></i> Seguranca 2FA
+                    <i class="bi bi-shield-lock"></i> Segurança 2FA
                 </a>
                 {% if usuario_nome %}
                 <a href="{{ url_for('rbac.listar_roles') }}" class="nav-item {% if 'rbac' in request.endpoint and 'role' in request.endpoint %}active{% endif %}">
                     <i class="bi bi-person-badge"></i> Perfis de Acesso
                 </a>
                 <a href="{{ url_for('rbac.gerenciar_usuarios_permissoes') }}" class="nav-item {% if 'rbac' in request.endpoint and 'usuario' in request.endpoint %}active{% endif %}">
-                    <i class="bi bi-people"></i> Permissoes Usuarios
+                    <i class="bi bi-people"></i> Permissões Usuários
                 </a>
                 <a href="{{ url_for('main.ver_logs') }}" class="nav-item {% if 'logs' in request.endpoint %}active{% endif %}">
                     <i class="bi bi-journal-text"></i> Auditoria

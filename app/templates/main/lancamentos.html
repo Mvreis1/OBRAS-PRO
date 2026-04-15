@@ -1,11 +1,14 @@
 {% extends "base.html" %}
 {% from "macros/paginacao.html" import renderizar_paginacao %}
 
-{% block title %}Lancamentos - {{ nome_sistema }}{% endblock %}
-{% block page_title %}Lancamentos Financeiros{% endblock %}
+{% block title %}Lançamentos - {{ nome_sistema }}{% endblock %}
+{% block page_title %}Lançamentos Financeiros{% endblock %}
 
 {% block topbar_actions %}
 <div style="display: flex; gap: 10px;">
+    <button onclick="toggleValores()" class="btn btn-outline" id="btnToggleValores">
+        <i class="bi bi-eye-slash" id="iconToggleValores"></i> Esconder Valores
+    </button>
     <a href="{{ url_for('excel.importar_lancamentos') }}" class="btn btn-outline">
         <i class="bi bi-upload me-2"></i>Importar
     </a>
@@ -13,9 +16,61 @@
         <i class="bi bi-file-earmark-excel me-2"></i>Exportar Excel
     </a>
     <a href="{{ url_for('main.novo_lancamento') }}" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-2"></i>Novo Lancamento
+        <i class="bi bi-plus-lg me-2"></i>Novo Lançamento
     </a>
 </div>
+
+<style>
+    .valor-mascarado {
+        filter: blur(8px);
+        user-select: none;
+        transition: filter 0.3s ease;
+    }
+    .valor-mascarado.mostrar {
+        filter: none;
+    }
+</style>
+
+<script>
+// Carregar estado salvo ao iniciar
+document.addEventListener('DOMContentLoaded', function() {
+    const valoresEscondidos = localStorage.getItem('valoresEscondidos') === 'true';
+    if (valoresEscondidos) {
+        aplicarEstadoValores(true);
+    }
+});
+
+function toggleValores() {
+    const btn = document.getElementById('btnToggleValores');
+    const escondido = !btn.classList.contains('valores-escondidos');
+    
+    aplicarEstadoValores(escondido);
+    
+    // Salvar estado no localStorage
+    localStorage.setItem('valoresEscondidos', escondido);
+}
+
+function aplicarEstadoValores(escondido) {
+    const valores = document.querySelectorAll('.valor-mascarado');
+    const btn = document.getElementById('btnToggleValores');
+    
+    valores.forEach(v => {
+        if (escondido) {
+            v.classList.remove('mostrar');
+        } else {
+            v.classList.add('mostrar');
+        }
+    });
+    
+    if (escondido) {
+        btn.classList.add('valores-escondidos');
+        btn.innerHTML = '<i class="bi bi-eye" id="iconToggleValores"></i> Mostrar Valores';
+    } else {
+        btn.classList.remove('valores-escondidos');
+        btn.innerHTML = '<i class="bi bi-eye-slash" id="iconToggleValores"></i> Esconder Valores';
+    }
+}
+</script>
 {% endblock %}
 
 {% block content %}
@@ -43,10 +98,10 @@
             <div class="col-md-2">
                 <select name="categoria" class="form-select">
                     <option value="">Todas as categorias</option>
-                    <option value="Mao de Obra" {% if categoria_selecionada == 'Mao de Obra' %}selected{% endif %}>Mao de Obra</option>
+                    <option value="Mão de Obra" {% if categoria_selecionada == 'Mão de Obra' %}selected{% endif %}>Mão de Obra</option>
                     <option value="Material" {% if categoria_selecionada == 'Material' %}selected{% endif %}>Material</option>
                     <option value="Equipamento" {% if categoria_selecionada == 'Equipamento' %}selected{% endif %}>Equipamento</option>
-                    <option value="Servico Terceiro" {% if categoria_selecionada == 'Servico Terceiro' %}selected{% endif %}>Servico Terceiro</option>
+                    <option value="Serviço Terceiro" {% if categoria_selecionada == 'Serviço Terceiro' %}selected{% endif %}>Serviço Terceiro</option>
                     <option value="Imposto" {% if categoria_selecionada == 'Imposto' %}selected{% endif %}>Imposto</option>
                     <option value="Outros" {% if categoria_selecionada == 'Outros' %}selected{% endif %}>Outros</option>
                 </select>
@@ -78,7 +133,7 @@
             <div class="stat-icon primary">
                 <i class="bi bi-arrow-down-circle"></i>
             </div>
-            <div class="stat-value" style="color: #4ade80;">
+            <div class="stat-value valor-mascarado mostrar" style="color: #4ade80;">
                 R$ {{ lancamentos|selectattr('tipo', 'equalto', 'Receita')|map(attribute='valor')|sum|format_currency }}
             </div>
             <div class="stat-label">Total Receitas</div>
@@ -89,7 +144,7 @@
             <div class="stat-icon danger">
                 <i class="bi bi-arrow-up-circle"></i>
             </div>
-            <div class="stat-value" style="color: #f87171;">
+            <div class="stat-value valor-mascarado mostrar" style="color: #f87171;">
                 R$ {{ lancamentos|selectattr('tipo', 'equalto', 'Despesa')|map(attribute='valor')|sum|format_currency }}
             </div>
             <div class="stat-label">Total Despesas</div>
@@ -100,7 +155,7 @@
             <div class="stat-icon success">
                 <i class="bi bi-wallet2"></i>
             </div>
-            <div class="stat-value">
+            <div class="stat-value valor-mascarado mostrar">
                 R$ {{ (lancamentos|selectattr('tipo', 'equalto', 'Receita')|map(attribute='valor')|sum) - (lancamentos|selectattr('tipo', 'equalto', 'Despesa')|map(attribute='valor')|sum) }}
             </div>
             <div class="stat-label">Saldo</div>
@@ -113,7 +168,7 @@
     <div class="card-header">
         <h5 class="card-title">
             <i class="bi bi-list-ul me-2"></i>
-            Lista de Lancamentos ({{ paginacao.total }})
+            Lista de Lançamentos ({{ paginacao.total }})
         </h5>
     </div>
     <div class="table-responsive">
@@ -121,13 +176,13 @@
             <thead>
                 <tr>
                     <th>Data</th>
-                    <th>Descricao</th>
+                    <th>Descrição</th>
                     <th>Obra</th>
                     <th>Categoria</th>
                     <th>Tipo</th>
                     <th>Valor</th>
                     <th>Status</th>
-                    <th style="width: 100px;">Acoes</th>
+                    <th style="width: 100px;">Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -157,7 +212,7 @@
                         <span class="badge badge-danger">{{ lanc.tipo }}</span>
                         {% endif %}
                     </td>
-                    <td style="font-weight: 600; color: {% if lanc.tipo == 'Receita' %}#4ade80{% else %}#f87171{% endif %};">
+                    <td style="font-weight: 600; color: {% if lanc.tipo == 'Receita' %}#4ade80{% else %}#f87171{% endif %};" class="valor-mascarado mostrar">
                         {% if lanc.tipo == 'Receita' %}+{% else %}-{% endif %}{{ lanc.valor|format_currency }}
                     </td>
                     <td>
@@ -189,10 +244,10 @@
                         <div style="width: 64px; height: 64px; background: var(--bg-tertiary); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
                             <i class="bi bi-cash-stack" style="font-size: 28px; color: var(--text-muted);"></i>
                         </div>
-                        <h4 style="margin-bottom: 10px; color: var(--text-primary);">Nenhum lancamento encontrado</h4>
-                        <p style="color: var(--text-muted); margin-bottom: 25px;">Cadastre seu primeiro lancamento financeiro</p>
+                        <h4 style="margin-bottom: 10px; color: var(--text-primary);">Nenhum lançamento encontrado</h4>
+                        <p style="color: var(--text-muted); margin-bottom: 25px;">Cadastre seu primeiro lançamento financeiro</p>
                         <a href="{{ url_for('main.novo_lancamento') }}" class="btn btn-primary">
-                            <i class="bi bi-plus-lg me-2"></i>Novo Lancamento
+                            <i class="bi bi-plus-lg me-2"></i>Novo Lançamento
                         </a>
                     </td>
                 </tr>

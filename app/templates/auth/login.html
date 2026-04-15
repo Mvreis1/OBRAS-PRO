@@ -263,22 +263,32 @@
         .form-control {
             width: 100%;
             padding: 14px 16px;
-            background: #1a1a2e;
-            border: 1px solid #3f3f46;
+            background: #1a1a2e !important;
+            border: 1px solid #3f3f46 !important;
             border-radius: 12px;
             font-size: 14px;
-            color: #ffffff;
+            color: #ffffff !important;
             transition: all 0.2s ease;
         }
 
         .form-control:focus {
             outline: none;
-            border-color: var(--accent-primary);
+            border-color: var(--accent-primary) !important;
             box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
-            color: #ffffff;
+            background: #16162a !important;
+            color: #ffffff !important;
         }
 
-        .form-control::placeholder { color: #6b7280; }
+        .form-control::placeholder { color: #6b7280 !important; }
+        
+        /* Fix para autocomplete - evita fundo branco/amarelo */
+        .form-control:-webkit-autofill,
+        .form-control:-webkit-autofill:hover,
+        .form-control:-webkit-autofill:focus {
+            -webkit-text-fill-color: #ffffff !important;
+            -webkit-box-shadow: 0 0 0px 1000px #1a1a2e inset !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
         
         .btn-login {
             width: 100%;
