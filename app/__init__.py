@@ -52,14 +52,25 @@ def create_app():
     cache = Cache(app)
     
     # Rate Limiter - desabilitado em produção para evitar 502
+    limiter = None
     try:
-        limiter = Limiter(
-            app=app,
-            key_func=get_remote_address,
-            default_limits=[RATELIMIT_DEFAULT] if os.environ.get('FLASK_ENV') != 'production' else [],
-            storage_uri=RATELIMIT_STORAGE_URL,
-            enabled=os.environ.get('FLASK_ENV') != 'production',
-        )
+        # Só habilitar em desenvolvimento
+        if os.environ.get('FLASK_ENV') != 'production':
+            limiter = Limiter(
+                app=app,
+                key_func=get_remote_address,
+                default_limits=[RATELIMIT_DEFAULT],
+                storage_uri=RATELIMIT_STORAGE_URL,
+                enabled=True,
+                headers_enabled=True,
+            )
+        else:
+            # Em produção, criar limiter desabilitado
+            limiter = Limiter(
+                app=app,
+                key_func=get_remote_address,
+                enabled=False,
+            )
     except Exception as e:
         app.logger.warning(f"Rate limiter nao inicializado: {e}")
         limiter = None
