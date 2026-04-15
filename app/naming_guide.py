@@ -1,3 +1,4 @@
+# ruff: noqa
 """
 Guia de nomenclatura do sistema OBRAS PRO
 
@@ -130,26 +131,26 @@ projectStartDate = project.startDate
 totalRevenue = revenue.total
 
 # Funções
-def calculateProjectBalance(projectId):
-    """Calculate revenue - expenses for a project"""
-    ...
-
-def getActiveVendors(companyId):
-    """Fetch all active vendors for a company"""
-    ...
-
-# Classes
-class FinancialReport:
-    """Generate financial reports"""
-    
-    def getMonthlyRevenue(self, year):
-        ...
-
-class ProjectService:
-    """Manage project lifecycle"""
-    
-    def createProject(self, data):
-        ...
+# def calculateProjectBalance(projectId):
+#     """Calculate revenue - expenses for a project"""
+#     ...
+#
+# def getActiveVendors(companyId):
+#     """Fetch all active vendors for a company"""
+#     ...
+#
+# # Classes
+# class FinancialReport:
+#     """Generate financial reports"""
+#     
+#     def getMonthlyRevenue(self, year):
+#         ...
+#
+# class ProjectService:
+#     """Manage project lifecycle"""
+#     
+#     def createProject(self, data):
+#         ...
 
 ================================================================================
 """

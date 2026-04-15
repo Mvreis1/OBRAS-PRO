@@ -1,13 +1,30 @@
 """
 Rotas de exportacao e importacao Excel para o sistema OBRAS PRO
 """
-from flask import Blueprint, request, session, render_template, redirect, url_for, flash, make_response
-from datetime import datetime, date, timedelta
-from app.routes.auth import login_required
-from app.models import db, Obra, Lancamento
+
+from datetime import date, datetime, timedelta
+
+from flask import (
+    Blueprint,
+    flash,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
+
 from app.constants import StatusObra
+from app.models import Lancamento, Obra, db
+from app.routes.auth import login_required
 from app.utils.excel_export import ExcelExport
-from app.utils.excel_import import importar_lancamentos_excel, importar_obras_excel, gerar_modelo_excel, ExcelImportError
+from app.utils.excel_import import (
+    ExcelImportError,
+    gerar_modelo_excel,
+    importar_lancamentos_excel,
+    importar_obras_excel,
+)
 
 excel_bp = Blueprint('excel', __name__)
 
@@ -16,21 +33,21 @@ excel_bp = Blueprint('excel', __name__)
 @login_required
 def exportar_lancamentos_excel():
     """Exporta lancamentos para Excel"""
-    from app.utils.rbac import require_permission, Modulos, Acoes
-    
     # Verificar permissão
     from app.models import Usuario
+    from app.utils.rbac import Acoes, Modulos
+
     usuario = db.session.get(Usuario, session.get('usuario_id'))
     if not usuario or not usuario.has_permission(Modulos.LANCAMENTOS, Acoes.EXPORTAR):
-        return "Acesso negado", 403
-    
+        return 'Acesso negado', 403
+
     empresa_id = session.get('empresa_id')
     obra_id = request.args.get('obra_id')
     tipo = request.args.get('tipo')
     categoria = request.args.get('categoria')
     data_inicio = request.args.get('data_inicio')
     data_fim = request.args.get('data_fim')
-    
+
     query = Lancamento.query.filter_by(empresa_id=empresa_id)
     if obra_id:
         query = query.filter_by(obra_id=obra_id)
@@ -42,9 +59,9 @@ def exportar_lancamentos_excel():
         query = query.filter(Lancamento.data >= datetime.strptime(data_inicio, '%Y-%m-%d').date())
     if data_fim:
         query = query.filter(Lancamento.data <= datetime.strptime(data_fim, '%Y-%m-%d').date())
-    
+
     lancamentos = query.order_by(Lancamento.data.desc()).all()
-    
+
     cabecalhos = [
         ('Data', 'date'),
         ('Obra', 'text'),
@@ -56,33 +73,38 @@ def exportar_lancamentos_excel():
         ('Status', 'text'),
         ('Documento', 'text'),
     ]
-    
+
     dados = []
     for lanc in lancamentos:
-        dados.append([
-            lanc.data,
-            lanc.obra.nome if lanc.obra else '-',
-            lanc.descricao,
-            lanc.categoria,
-            lanc.tipo,
-            lanc.valor if lanc.tipo == 'Receita' else -lanc.valor,
-            lanc.forma_pagamento or '-',
-            lanc.status_pagamento or '-',
-            lanc.documento or '-',
-        ])
-    
+        dados.append(
+            [
+                lanc.data,
+                lanc.obra.nome if lanc.obra else '-',
+                lanc.descricao,
+                lanc.categoria,
+                lanc.tipo,
+                lanc.valor if lanc.tipo == 'Receita' else -lanc.valor,
+                lanc.forma_pagamento or '-',
+                lanc.status_pagamento or '-',
+                lanc.documento or '-',
+            ]
+        )
+
     total_receitas = sum(l.valor for l in lancamentos if l.tipo == 'Receita')
     total_despesas = sum(l.valor for l in lancamentos if l.tipo == 'Despesa')
-    
+
     exporter = ExcelExport()
     exporter.add_sheet('Lancamentos', cabecalhos, dados)
-    exporter.add_summary('Lancamentos', {  # Corrigido: add_summary_row -> add_summary
-        'Total Receitas:': total_receitas,
-        'Total Despesas:': total_despesas,
-        'Saldo:': total_receitas - total_despesas,
-        'Qtd Lancamentos:': len(lancamentos),
-    })
-    
+    exporter.add_summary(
+        'Lancamentos',
+        {  # Corrigido: add_summary_row -> add_summary
+            'Total Receitas:': total_receitas,
+            'Total Despesas:': total_despesas,
+            'Saldo:': total_receitas - total_despesas,
+            'Qtd Lancamentos:': len(lancamentos),
+        },
+    )
+
     filename = f'lancamentos_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
     return exporter.to_response(filename)
 
@@ -93,7 +115,7 @@ def exportar_obras_excel():
     """Exporta obras para Excel"""
     empresa_id = session.get('empresa_id')
     obras = Obra.query.filter_by(empresa_id=empresa_id).order_by(Obra.created_at.desc()).all()
-    
+
     cabecalhos = [
         ('Obra', 'text'),
         ('Cliente', 'text'),
@@ -107,39 +129,45 @@ def exportar_obras_excel():
         ('Previsao Fim', 'date'),
         ('Responsavel', 'text'),
     ]
-    
+
     dados = []
     for obra in obras:
         total_gasto = sum(l.valor for l in obra.lancamentos if l.tipo == 'Despesa')
         total_receita = sum(l.valor for l in obra.lancamentos if l.tipo == 'Receita')
-        pct_utilizado = (total_gasto / obra.orcamento_previsto) if obra.orcamento_previsto > 0 else 0
-        
-        dados.append([
-            obra.nome,
-            obra.cliente or '-',
-            obra.status,
-            obra.orcamento_previsto,
-            -total_gasto,
-            total_receita - total_gasto,
-            pct_utilizado,
-            obra.progresso,
-            obra.data_inicio,
-            obra.data_fim_prevista,
-            obra.responsavel or '-',
-        ])
-    
+        pct_utilizado = (
+            (total_gasto / obra.orcamento_previsto) if obra.orcamento_previsto > 0 else 0
+        )
+
+        dados.append(
+            [
+                obra.nome,
+                obra.cliente or '-',
+                obra.status,
+                obra.orcamento_previsto,
+                -total_gasto,
+                total_receita - total_gasto,
+                pct_utilizado,
+                obra.progresso,
+                obra.data_inicio,
+                obra.data_fim_prevista,
+                obra.responsavel or '-',
+            ]
+        )
+
     exporter = ExcelExport()
     exporter.add_sheet('Obras', cabecalhos, dados)
-    
-    total_geral = sum(o.orcamento_previsto for o in obras)
-    exporter.add_summary('Obras', {
-        'Total Obras:': len(obras),
-        'Orcamento Total:': total_geral,
 
-        'Em Execução:': sum(1 for o in obras if o.status == StatusObra.EM_EXECUCAO.value),
-        'Concluídas:': sum(1 for o in obras if o.status == StatusObra.CONCLUIDA.value),
-    })
-    
+    total_geral = sum(o.orcamento_previsto for o in obras)
+    exporter.add_summary(
+        'Obras',
+        {
+            'Total Obras:': len(obras),
+            'Orcamento Total:': total_geral,
+            'Em Execução:': sum(1 for o in obras if o.status == StatusObra.EM_EXECUCAO.value),
+            'Concluídas:': sum(1 for o in obras if o.status == StatusObra.CONCLUIDA.value),
+        },
+    )
+
     filename = f'obras_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
     return exporter.to_response(filename)
 
@@ -150,7 +178,7 @@ def exportar_relatorio_financeiro_excel():
     """Exporta relatorio financeiro completo para Excel (multi-sheet)"""
     empresa_id = session.get('empresa_id')
     obras = Obra.query.filter_by(empresa_id=empresa_id).all()
-    
+
     # Sheet 1: Resumo Geral
     cabecalhos_resumo = [
         ('Obra', 'text'),
@@ -161,44 +189,48 @@ def exportar_relatorio_financeiro_excel():
         ('% Utilizado', 'percent'),
         ('Status', 'text'),
     ]
-    
+
     dados_resumo = []
     total_orcamento = 0
     total_receitas = 0
     total_despesas = 0
-    
+
     for obra in obras:
         receitas = sum(l.valor for l in obra.lancamentos if l.tipo == 'Receita')
         despesas = sum(l.valor for l in obra.lancamentos if l.tipo == 'Despesa')
         pct = (despesas / obra.orcamento_previsto) if obra.orcamento_previsto > 0 else 0
-        
-        dados_resumo.append([
-            obra.nome,
-            obra.orcamento_previsto,
-            receitas,
-            despesas,
-            receitas - despesas,
-            pct,
-            obra.status,
-        ])
-        
+
+        dados_resumo.append(
+            [
+                obra.nome,
+                obra.orcamento_previsto,
+                receitas,
+                despesas,
+                receitas - despesas,
+                pct,
+                obra.status,
+            ]
+        )
+
         total_orcamento += obra.orcamento_previsto
         total_receitas += receitas
         total_despesas += despesas
-    
-    dados_resumo.append([
-        'TOTAL GERAL',
-        total_orcamento,
-        total_receitas,
-        total_despesas,
-        total_receitas - total_despesas,
-        (total_despesas / total_orcamento) if total_orcamento > 0 else 0,
-        '-',
-    ])
-    
+
+    dados_resumo.append(
+        [
+            'TOTAL GERAL',
+            total_orcamento,
+            total_receitas,
+            total_despesas,
+            total_receitas - total_despesas,
+            (total_despesas / total_orcamento) if total_orcamento > 0 else 0,
+            '-',
+        ]
+    )
+
     exporter = ExcelExport()
     exporter.add_sheet('Resumo Financeiro', cabecalhos_resumo, dados_resumo)
-    
+
     # Sheet 2: Fluxo de Caixa por Mes (12 meses)
     cabecalhos_fluxo = [
         ('Mes/Ano', 'text'),
@@ -207,10 +239,10 @@ def exportar_relatorio_financeiro_excel():
         ('Saldo do Mes (R$)', 'currency'),
         ('Saldo Acumulado (R$)', 'currency'),
     ]
-    
+
     dados_fluxo = []
     acumulado = 0
-    
+
     for i in range(11, -1, -1):
         mes_ref = date.today().replace(day=1)
         for _ in range(i):
@@ -219,27 +251,29 @@ def exportar_relatorio_financeiro_excel():
             else:
                 mes_ref = mes_ref.replace(month=mes_ref.month - 1)
         mes_fim = (mes_ref.replace(day=28) + timedelta(days=4)).replace(day=1)
-        
+
         lancs_mes = Lancamento.query.filter(
             Lancamento.empresa_id == empresa_id,
             Lancamento.data >= mes_ref,
-            Lancamento.data < mes_fim
+            Lancamento.data < mes_fim,
         ).all()
-        
+
         receitas = sum(l.valor for l in lancs_mes if l.tipo == 'Receita')
         despesas = sum(l.valor for l in lancs_mes if l.tipo == 'Despesa')
         acumulado += receitas - despesas
-        
-        dados_fluxo.append([
-            mes_ref.strftime('%m/%Y'),
-            receitas,
-            despesas,
-            receitas - despesas,
-            acumulado,
-        ])
-    
+
+        dados_fluxo.append(
+            [
+                mes_ref.strftime('%m/%Y'),
+                receitas,
+                despesas,
+                receitas - despesas,
+                acumulado,
+            ]
+        )
+
     exporter.add_sheet('Fluxo de Caixa (12m)', cabecalhos_fluxo, dados_fluxo)
-    
+
     # Sheet 3: Despesas por Categoria
     cabecalhos_cat = [
         ('Categoria', 'text'),
@@ -247,33 +281,43 @@ def exportar_relatorio_financeiro_excel():
         ('% do Total', 'percent'),
         ('Qtd Lancamentos', 'number'),
     ]
-    
+
     dados_cat = []
-    categorias = db.session.query(
-        Lancamento.categoria,
-        db.func.sum(Lancamento.valor).label('total'),
-        db.func.count(Lancamento.id).label('qtd')
-    ).filter(
-        Lancamento.empresa_id == empresa_id,
-        Lancamento.tipo == 'Despesa'
-    ).group_by(Lancamento.categoria).order_by(db.desc('total')).all()
-    
+    categorias = (
+        db.session.query(
+            Lancamento.categoria,
+            db.func.sum(Lancamento.valor).label('total'),
+            db.func.count(Lancamento.id).label('qtd'),
+        )
+        .filter(Lancamento.empresa_id == empresa_id, Lancamento.tipo == 'Despesa')
+        .group_by(Lancamento.categoria)
+        .order_by(db.desc('total'))
+        .all()
+    )
+
     for cat in categorias:
-        dados_cat.append([
-            cat[0],
-            cat[1],
-            (cat[1] / total_despesas) if total_despesas > 0 else 0,
-            cat[2],
-        ])
-    
+        dados_cat.append(
+            [
+                cat[0],
+                cat[1],
+                (cat[1] / total_despesas) if total_despesas > 0 else 0,
+                cat[2],
+            ]
+        )
+
     exporter.add_sheet('Despesas por Categoria', cabecalhos_cat, dados_cat)
-    exporter.add_summary('Despesas por Categoria', {
-        'Total Despesas:': total_despesas,
-        'Total Receitas:': total_receitas,
-        'Saldo Geral:': total_receitas - total_despesas,
-        'Margem (%):': ((total_receitas - total_despesas) / total_receitas * 100) if total_receitas > 0 else 0,
-    })
-    
+    exporter.add_summary(
+        'Despesas por Categoria',
+        {
+            'Total Despesas:': total_despesas,
+            'Total Receitas:': total_receitas,
+            'Saldo Geral:': total_receitas - total_despesas,
+            'Margem (%):': ((total_receitas - total_despesas) / total_receitas * 100)
+            if total_receitas > 0
+            else 0,
+        },
+    )
+
     filename = f'relatorio_financeiro_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
     return exporter.to_response(filename)
 
@@ -281,6 +325,7 @@ def exportar_relatorio_financeiro_excel():
 # ============================================================================
 # ROTAS DE IMPORTACAO
 # ============================================================================
+
 
 @excel_bp.route('/lancamentos/importar', methods=['GET', 'POST'])
 @login_required
@@ -332,8 +377,7 @@ def importar_lancamentos():
                 obra = obra_padrao
                 if data.get('obra_nome') and not obra:
                     obra = Obra.query.filter(
-                        Obra.empresa_id == empresa_id,
-                        Obra.nome.ilike(f"%{data['obra_nome']}%")
+                        Obra.empresa_id == empresa_id, Obra.nome.ilike(f'%{data["obra_nome"]}%')
                     ).first()
 
                 if not obra:
@@ -349,7 +393,7 @@ def importar_lancamentos():
                     obra_id=obra.id,
                     descricao=data['descricao'],
                     valor=data['valor'],
-                    data=data['data']
+                    data=data['data'],
                 ).first()
 
                 if existente:
@@ -368,7 +412,7 @@ def importar_lancamentos():
                     forma_pagamento=data.get('forma_pagamento', 'Transferencia'),
                     status_pagamento=data.get('status_pagamento', 'Pago'),
                     documento=data.get('documento', ''),
-                    observacoes=data.get('observacoes', '')
+                    observacoes=data.get('observacoes', ''),
                 )
                 db.session.add(lanc)
                 importados += 1
@@ -387,10 +431,10 @@ def importar_lancamentos():
             return redirect(url_for('main.lancamentos'))
 
         except ExcelImportError as e:
-            flash(f'Erro na importacao: {str(e)}', 'danger')
+            flash(f'Erro na importacao: {e!s}', 'danger')
             return redirect(url_for('excel.importar_lancamentos'))
         except Exception as e:
-            flash(f'Erro inesperado: {str(e)}', 'danger')
+            flash(f'Erro inesperado: {e!s}', 'danger')
             return redirect(url_for('excel.importar_lancamentos'))
 
     return render_template('excel/importar_lancamentos.html', obras=obras)
@@ -403,7 +447,9 @@ def baixar_modelo():
     excel_data = gerar_modelo_excel()
 
     response = make_response(excel_data)
-    response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    response.headers['Content-Type'] = (
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
     response.headers['Content-Disposition'] = 'attachment; filename=modelo_lancamentos.xlsx'
     return response
 
@@ -417,7 +463,9 @@ def baixar_planilha_obras_exemplo():
     excel_data = gerar_planilha_obras_exemplo()
 
     response = make_response(excel_data)
-    response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    response.headers['Content-Type'] = (
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
     response.headers['Content-Disposition'] = 'attachment; filename=obras_exemplo_20_obras.xlsx'
     return response
 
@@ -431,7 +479,9 @@ def baixar_planilha_lancamentos_exemplo():
     excel_data = gerar_planilha_lancamentos_exemplo()
 
     response = make_response(excel_data)
-    response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    response.headers['Content-Type'] = (
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
     response.headers['Content-Disposition'] = 'attachment; filename=lancamentos_exemplo.xlsx'
     return response
 
@@ -472,10 +522,7 @@ def importar_obras():
 
             for data in obras_data:
                 # Verifica duplicado (mesmo nome)
-                existente = Obra.query.filter_by(
-                    empresa_id=empresa_id,
-                    nome=data['nome']
-                ).first()
+                existente = Obra.query.filter_by(empresa_id=empresa_id, nome=data['nome']).first()
 
                 if existente:
                     duplicadas += 1
@@ -493,7 +540,7 @@ def importar_obras():
                     data_fim_prevista=data.get('data_fim_prevista'),
                     progresso=data.get('progresso', 0),
                     responsavel=data.get('responsavel'),
-                    descricao=data.get('descricao')
+                    descricao=data.get('descricao'),
                 )
                 db.session.add(obra)
                 importadas += 1
@@ -512,10 +559,10 @@ def importar_obras():
             return redirect(url_for('main.obras'))
 
         except ExcelImportError as e:
-            flash(f'Erro na importacao: {str(e)}', 'danger')
+            flash(f'Erro na importacao: {e!s}', 'danger')
             return redirect(url_for('excel.importar_obras'))
         except Exception as e:
-            flash(f'Erro inesperado: {str(e)}', 'danger')
+            flash(f'Erro inesperado: {e!s}', 'danger')
             return redirect(url_for('excel.importar_obras'))
 
     return render_template('excel/importar_obras.html')

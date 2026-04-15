@@ -68,25 +68,25 @@
                             <h5 class="mb-3">Lucro/Prejuízo por Período</h5>
                             <div class="row mb-4">
                                 <div class="col-md-4">
-                                    <div class="card bg-success bg-opacity-10">
+                                    <div class="card" style="background-color: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3);">
                                         <div class="card-body">
-                                            <h6 class="text-muted">Total Receitas</h6>
+                                            <h6 style="color: var(--text-muted);">Total Receitas</h6>
                                             <h3 class="text-success">R$ {{ total_receitas|number_format(2) }}</h3>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="card bg-danger bg-opacity-10">
+                                    <div class="card" style="background-color: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3);">
                                         <div class="card-body">
-                                            <h6 class="text-muted">Total Despesas</h6>
+                                            <h6 style="color: var(--text-muted);">Total Despesas</h6>
                                             <h3 class="text-danger">R$ {{ total_despesas|number_format(2) }}</h3>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="card {% if lucro_prejuizo >= 0 %}bg-success bg-opacity-10{% else %}bg-danger bg-opacity-10{% endif %}">
+                                    <div class="card" style="{% if lucro_prejuizo >= 0 %}background-color: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3);{% else %}background-color: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3);{% endif %}">
                                         <div class="card-body">
-                                            <h6 class="text-muted">{% if lucro_prejuizo >= 0 %}Lucro{% else %}Prejuízo{% endif %}</h6>
+                                            <h6 style="color: var(--text-muted);">{% if lucro_prejuizo >= 0 %}Lucro{% else %}Prejuízo{% endif %}</h6>
                                             <h3 class="{% if lucro_prejuizo >= 0 %}text-success{% else %}text-danger{% endif %}">R$ {{ lucro_prejuizo|number_format(2) }}</h3>
                                         </div>
                                     </div>
@@ -96,7 +96,7 @@
                             <h6 class="mb-2">Detalhamento por Obra</h6>
                             <div class="table-responsive">
                                 <table class="table table-hover">
-                                    <thead class="table-light">
+                                    <thead>
                                         <tr>
                                             <th>Obra</th>
                                             <th class="text-end">Receitas</th>
@@ -128,7 +128,7 @@
                                         </tr>
                                         {% endfor %}
                                     </tbody>
-                                    <tfoot class="table-light">
+                                    <tfoot>
                                         <tr>
                                             <th>TOTAL</th>
                                             <th class="text-end text-success">R$ {{ total_receitas|number_format(2) }}</th>
@@ -151,7 +151,7 @@
                             <h6 class="mb-2 mt-4">Evolução Mensal</h6>
                             <div class="table-responsive">
                                 <table class="table table-sm table-bordered">
-                                    <thead class="table-light">
+                                    <thead>
                                         <tr>
                                             <th>Mês</th>
                                             <th class="text-end">Receitas</th>
@@ -177,7 +177,7 @@
                             <h5 class="mb-3">Comparação Orçamento vs Real</h5>
                             <div class="table-responsive">
                                 <table class="table table-hover">
-                                    <thead class="table-light">
+                                    <thead>
                                         <tr>
                                             <th>Obra</th>
                                             <th class="text-end">Orçamento</th>
@@ -215,7 +215,7 @@
                                         </tr>
                                         {% endfor %}
                                     </tbody>
-                                    <tfoot class="table-light">
+                                    <tfoot>
                                         <tr>
                                             <th>TOTAL</th>
                                             <th class="text-end">R$ {{ total_orcamento|number_format(2) }}</th>

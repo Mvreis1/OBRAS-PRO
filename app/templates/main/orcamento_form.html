@@ -231,4 +231,134 @@
     </div>
 </div>
 
+<!-- Modal para adicionar item -->
+<div class="modal fade" id="itemModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Adicionar Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Categoria</label>
+                    <select id="item_categoria" class="form-select">
+                        <option value="">Selecione...</option>
+                        <option value="Material">Material</option>
+                        <option value="Mão de Obra">Mão de Obra</option>
+                        <option value="Equipamento">Equipamento</option>
+                        <option value="Serviço">Serviço</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Descrição *</label>
+                    <input type="text" id="item_descricao" class="form-control" required>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label">Unidade</label>
+                            <input type="text" id="item_unidade" class="form-control" value="un">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label">Quantidade</label>
+                            <input type="number" id="item_quantidade" class="form-control" value="1" step="0.01">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label">Valor Unitário</label>
+                            <input type="number" id="item_valor" class="form-control" value="0" step="0.01">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="adicionarItem()">Adicionar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let itens = [];
+
+function adicionarItem() {
+    const categoria = document.getElementById('item_categoria').value;
+    const descricao = document.getElementById('item_descricao').value;
+    const unidade = document.getElementById('item_unidade').value;
+    const quantidade = parseFloat(document.getElementById('item_quantidade').value) || 1;
+    const valor = parseFloat(document.getElementById('item_valor').value) || 0;
+
+    if (!descricao) {
+        alert('Informe a descrição do item');
+        return;
+    }
+
+    const item = {
+        categoria: categoria,
+        descricao: descricao,
+        unidade: unidade,
+        quantidade: quantidade,
+        valor_unitario: valor
+    };
+
+    itens.push(item);
+    atualizarListaItens();
+    atualizarCampoJson();
+
+    // Limpar modal
+    document.getElementById('item_descricao').value = '';
+    document.getElementById('item_quantidade').value = '1';
+    document.getElementById('item_valor').value = '0';
+
+    // Fechar modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('itemModal'));
+    modal.hide();
+}
+
+function removerItem(index) {
+    itens.splice(index, 1);
+    atualizarListaItens();
+    atualizarCampoJson();
+}
+
+function atualizarListaItens() {
+    const container = document.getElementById('lista_itens');
+
+    if (itens.length === 0) {
+        container.innerHTML = '<p class="text-muted">Nenhum item adicionado</p>';
+        return;
+    }
+
+    let html = '<table class="table table-sm"><thead><tr><th>Descrição</th><th>Qtd</th><th>Valor</th><th></th></tr></thead><tbody>';
+
+    let totalItens = 0;
+    itens.forEach((item, index) => {
+        const valorTotal = item.quantidade * item.valor_unitario;
+        totalItens += valorTotal;
+        html += `<tr>
+            <td>${item.descricao}</td>
+            <td>${item.quantidade} ${item.unidade}</td>
+            <td>R$ ${valorTotal.toFixed(2)}</td>
+            <td><button type="button" class="btn btn-sm btn-danger" onclick="removerItem(${index})">×</button></td>
+        </tr>`;
+    });
+
+    html += `</tbody></table><div class="text-end"><strong>Total dos Itens: R$ ${totalItens.toFixed(2)}</strong></div>`;
+    container.innerHTML = html;
+}
+
+function atualizarCampoJson() {
+    document.getElementById('itens_json').value = JSON.stringify(itens);
+}
+
+// Inicializar
+atualizarCampoJson();
+</script>
+
 {% endblock %}

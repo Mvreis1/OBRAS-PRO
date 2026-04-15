@@ -37,15 +37,31 @@
 {% block content %}
 <!-- Imagem da Obra -->
 {% if obra.imagem %}
-<div style="height: 250px; overflow: hidden; border-radius: 12px; margin-bottom: 20px;">
+<div style="position: relative; height: 250px; overflow: hidden; border-radius: 12px; margin-bottom: 20px;">
     <img src="{{ obra.imagem }}" style="width: 100%; height: 100%; object-fit: cover;" alt="{{ obra.nome }}">
+    <!-- Overlay com botões -->
+    <div style="position: absolute; top: 10px; right: 10px; display: flex; gap: 8px;">
+        <form method="POST" action="{{ url_for('main.upload_imagem_obra', obra_id=obra.id) }}" enctype="multipart/form-data" style="display: inline;" id="formTrocarImg">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="file" name="imagem" accept="image/*" style="display: none;" id="trocarImgInput" onchange="document.getElementById('formTrocarImg').submit()">
+            <label for="trocarImgInput" class="btn btn-sm" style="cursor: pointer; background: rgba(0,0,0,0.6); color: white; border: 1px solid rgba(255,255,255,0.3); backdrop-filter: blur(4px);">
+                <i class="bi bi-arrow-repeat me-1"></i>Trocar
+            </label>
+        </form>
+        <form method="POST" action="{{ url_for('main.remover_imagem_obra', obra_id=obra.id) }}" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja remover a imagem?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm" style="background: rgba(239, 68, 68, 0.8); color: white; border: 1px solid rgba(255,255,255,0.3); backdrop-filter: blur(4px);">
+                <i class="bi bi-trash me-1"></i>Remover
+            </button>
+        </form>
+    </div>
 </div>
 {% else %}
 <div style="height: 200px; background: var(--bg-tertiary); border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; flex-direction: column; border: 2px dashed var(--border-default);">
     <i class="bi bi-image" style="font-size: 40px; color: var(--text-muted); margin-bottom: 10px;"></i>
-    <form method="POST" action="{{ url_for('main.upload_imagem_obra', obra_id=obra.id) }}" enctype="multipart/form-data" style="display: flex; gap: 10px;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="file" name="imagem" accept="image/*" style="display: none;" id="imgInput" onchange="this.form.submit()">
+    <form method="POST" action="{{ url_for('main.upload_imagem_obra', obra_id=obra.id) }}" enctype="multipart/form-data" style="display: flex; gap: 10px;" id="formUploadImg">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="file" name="imagem" accept="image/*" style="display: none;" id="imgInput" onchange="document.getElementById('formUploadImg').submit()">
         <label for="imgInput" class="btn btn-outline btn-sm" style="cursor: pointer;">
             <i class="bi bi-upload me-2"></i>Adicionar Foto
         </label>
@@ -71,19 +87,19 @@
                                 <span class="badge badge-danger">{{ obra.status }}</span>
                             {% endif %}
                         </div>
-                        <p style="color: var(--secondary); margin-bottom: 5px;">
+                        <p style="color: var(--text-secondary); margin-bottom: 5px;">
                             <i class="bi bi-geo-alt me-2"></i>{{ obra.endereco or 'Endereco nao cadastrado' }}
                         </p>
-                        <p style="color: var(--secondary); margin-bottom: 5px;">
+                        <p style="color: var(--text-secondary); margin-bottom: 5px;">
                             <i class="bi bi-person me-2"></i>Cliente: {{ obra.cliente or 'Nao cadastrado' }}
                         </p>
-                        <p style="color: var(--secondary); margin-bottom: 5px;">
+                        <p style="color: var(--text-secondary); margin-bottom: 5px;">
                             <i class="bi bi-person-badge me-2"></i>Responsavel: {{ obra.responsavel or 'Nao cadastrado' }}
                         </p>
                     </div>
                     <div style="text-align: right;">
-                        <div style="font-size: 12px; color: var(--secondary);">Orcamento Previsto</div>
-                        <div style="font-size: 28px; font-weight: 700; color: var(--primary);">{{ obra.orcamento_previsto|format_currency }}</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">Orcamento Previsto</div>
+                        <div style="font-size: 28px; font-weight: 700; color: var(--accent-primary);">{{ obra.orcamento_previsto|format_currency }}</div>
                     </div>
                 </div>
                 
@@ -92,8 +108,8 @@
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div style="flex: 1;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                            <span style="font-size: 14px; color: var(--secondary);">Progresso da Obra</span>
-                            <span style="font-size: 14px; font-weight: 600;">{{ obra.progresso }}%</span>
+                            <span style="font-size: 14px; color: var(--text-secondary);">Progresso da Obra</span>
+                            <span style="font-size: 14px; font-weight: 600; color: var(--text-primary);">{{ obra.progresso }}%</span>
                         </div>
                         <div class="progress" style="height: 12px;">
                             <div class="progress-bar" role="progressbar" 
@@ -105,21 +121,21 @@
                 
                 <div class="row mt-4">
                     <div class="col-md-4">
-                        <div style="text-align: center; padding: 15px; background: var(--light); border-radius: 8px;">
-                            <div style="font-size: 12px; color: var(--secondary); margin-bottom: 5px;">Data Inicio</div>
-                            <div style="font-size: 16px; font-weight: 600;">{{ obra.data_inicio|format_date if obra.data_inicio else '-' }}</div>
+                        <div style="text-align: center; padding: 15px; background: var(--bg-tertiary); border-radius: 8px; border: 1px solid var(--border-subtle);">
+                            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 5px;">Data Inicio</div>
+                            <div style="font-size: 16px; font-weight: 600; color: var(--text-primary);">{{ obra.data_inicio|format_date if obra.data_inicio else '-' }}</div>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div style="text-align: center; padding: 15px; background: var(--light); border-radius: 8px;">
-                            <div style="font-size: 12px; color: var(--secondary); margin-bottom: 5px;">Previsao Termino</div>
-                            <div style="font-size: 16px; font-weight: 600;">{{ obra.data_fim_prevista|format_date if obra.data_fim_prevista else '-' }}</div>
+                        <div style="text-align: center; padding: 15px; background: var(--bg-tertiary); border-radius: 8px; border: 1px solid var(--border-subtle);">
+                            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 5px;">Previsao Termino</div>
+                            <div style="font-size: 16px; font-weight: 600; color: var(--text-primary);">{{ obra.data_fim_prevista|format_date if obra.data_fim_prevista else '-' }}</div>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div style="text-align: center; padding: 15px; background: var(--light); border-radius: 8px;">
-                            <div style="font-size: 12px; color: var(--secondary); margin-bottom: 5px;">Data Conclusao</div>
-                            <div style="font-size: 16px; font-weight: 600;">{{ obra.data_fim_real|format_date if obra.data_fim_real else '-' }}</div>
+                        <div style="text-align: center; padding: 15px; background: var(--bg-tertiary); border-radius: 8px; border: 1px solid var(--border-subtle);">
+                            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 5px;">Data Conclusao</div>
+                            <div style="font-size: 16px; font-weight: 600; color: var(--text-primary);">{{ obra.data_fim_real|format_date if obra.data_fim_real else '-' }}</div>
                         </div>
                     </div>
                 </div>
@@ -133,24 +149,24 @@
                 <h5 class="card-title"><i class="bi bi-cash-stack me-2"></i>Financeiro</h5>
             </div>
             <div class="card-body">
-                <div style="padding: 15px 0; border-bottom: 1px solid var(--border);">
-                    <div style="font-size: 13px; color: var(--secondary);">Total Receitas</div>
+                <div style="padding: 15px 0; border-bottom: 1px solid var(--border-subtle);">
+                    <div style="font-size: 13px; color: var(--text-muted);">Total Receitas</div>
                     <div style="font-size: 20px; font-weight: 700; color: var(--success);">{{ total_receitas|format_currency }}</div>
                 </div>
-                <div style="padding: 15px 0; border-bottom: 1px solid var(--border);">
-                    <div style="font-size: 13px; color: var(--secondary);">Total Despesas</div>
+                <div style="padding: 15px 0; border-bottom: 1px solid var(--border-subtle);">
+                    <div style="font-size: 13px; color: var(--text-muted);">Total Despesas</div>
                     <div style="font-size: 20px; font-weight: 700; color: var(--danger);">{{ total_despesas|format_currency }}</div>
                 </div>
                 <div style="padding: 15px 0;">
-                    <div style="font-size: 13px; color: var(--secondary);">Saldo</div>
+                    <div style="font-size: 13px; color: var(--text-muted);">Saldo</div>
                     <div style="font-size: 20px; font-weight: 700; color: {% if total_receitas - total_despesas >= 0 %}var(--success){% else %}var(--danger){% endif %};">
                         {{ (total_receitas - total_despesas)|format_currency }}
                     </div>
                 </div>
-                
+
                 <!-- Barra comparacao -->
                 <div style="margin-top: 15px;">
-                    <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; color: var(--text-secondary);">
                         <span>Orcamento utilizado</span>
                         <span>{{ dados_obra.percentual|int }}%</span>
                     </div>

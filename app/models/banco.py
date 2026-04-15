@@ -1,14 +1,17 @@
 """
 Modelos de contas bancárias
 """
-from app.models.models import db, SoftDeleteMixin
+
 from datetime import datetime
+
+from app.models.models import SoftDeleteMixin, db
 
 
 class ContaBancaria(db.Model, SoftDeleteMixin):
     """Contas bancárias do sistema"""
+
     __tablename__ = 'contas_bancarias'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     empresa_id = db.Column(db.Integer, db.ForeignKey('empresas.id'), nullable=False)
     nome = db.Column(db.String(100), nullable=False)
@@ -21,9 +24,11 @@ class ContaBancaria(db.Model, SoftDeleteMixin):
     ativo = db.Column(db.Boolean, default=True)
     observacoes = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    lancamentos = db.relationship('LancamentoConta', backref='conta', lazy='dynamic', cascade='all, delete-orphan')
-    
+
+    lancamentos = db.relationship(
+        'LancamentoConta', backref='conta', lazy='dynamic', cascade='all, delete-orphan'
+    )
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -34,14 +39,15 @@ class ContaBancaria(db.Model, SoftDeleteMixin):
             'conta': self.conta,
             'tipo': self.tipo,
             'saldo_atual': self.saldo_atual,
-            'ativo': self.ativo
+            'ativo': self.ativo,
         }
 
 
 class LancamentoConta(db.Model):
     """Lançamentos em contas bancárias"""
+
     __tablename__ = 'lancamentos_conta'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     empresa_id = db.Column(db.Integer, db.ForeignKey('empresas.id'), nullable=False)
     conta_id = db.Column(db.Integer, db.ForeignKey('contas_bancarias.id'), nullable=False)
@@ -52,7 +58,7 @@ class LancamentoConta(db.Model):
     documento = db.Column(db.String(100))
     categoria = db.Column(db.String(50))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -64,5 +70,5 @@ class LancamentoConta(db.Model):
             'valor': self.valor,
             'data': self.data.strftime('%Y-%m-%d') if self.data else None,
             'documento': self.documento,
-            'categoria': self.categoria
+            'categoria': self.categoria,
         }

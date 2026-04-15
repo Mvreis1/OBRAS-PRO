@@ -45,10 +45,31 @@
                         <textarea class="form-control" name="descricao" rows="3">{{ obra.descricao if obra and obra.descricao else '' }}</textarea>
                     </div>
                     
-                    <div class="mb-3">
-                        <label class="form-label">Endereco</label>
-                        <input type="text" class="form-control" name="endereco" value="{{ obra.endereco if obra and obra.endereco else '' }}">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label class="form-label">CEP</label>
+                                <input type="text" class="form-control" id="cep" placeholder="00000-000" maxlength="9" onkeyup="mascaraCEP(this)" onblur="buscarCEP(this.value, {endereco: 'endereco'})">
+                                <small class="form-text text-muted">Digite o CEP para buscar endereço</small>
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <div class="mb-3">
+                                <label class="form-label">Endereco</label>
+                                <input type="text" class="form-control" id="endereco" name="endereco" value="{{ obra.endereco if obra and obra.endereco else '' }}">
+                            </div>
+                        </div>
                     </div>
+
+                    <script>
+                    function mascaraCEP(input) {
+                        let valor = input.value.replace(/\D/g, '');
+                        if (valor.length > 5) {
+                            valor = valor.substring(0, 5) + '-' + valor.substring(5, 8);
+                        }
+                        input.value = valor;
+                    }
+                    </script>
                     
                     <div class="row">
                         <div class="col-md-6">

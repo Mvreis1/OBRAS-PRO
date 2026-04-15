@@ -108,6 +108,10 @@
                         <option value="gpt-3.5-turbo">🧠 ChatGPT (GPT-3.5)</option>
                         <option value="gpt-4">💎 ChatGPT (GPT-4)</option>
                         <option value="gpt-4-turbo">⚡ ChatGPT (GPT-4 Turbo)</option>
+                        <option value="gpt-4o">🚀 ChatGPT (GPT-4o)</option>
+                        <option value="gpt-4o-mini">💨 ChatGPT (GPT-4o Mini)</option>
+                        <option value="gemini">🔮 Google Gemini</option>
+                        <option value="claude">📝 Anthropic Claude</option>
                     </select>
                     <span style="font-size: 12px; color: var(--text-muted); align-self: center;">
                         <i class="bi bi-info-circle me-1"></i>Selecione o modelo IA
@@ -141,7 +145,7 @@ function enviarMensagem() {
     input.value = '';
     mostrarTyping();
     
-    fetch('/ia/api/ia/chat', {
+    fetch('/ia/chat', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({mensagem: mensagem, modelo: modelo})

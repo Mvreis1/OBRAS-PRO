@@ -78,6 +78,9 @@ function aplicarEstadoValores(escondido) {
 <div class="card mb-4">
     <div class="card-body">
         <form method="GET" action="{{ url_for('main.lancamentos') }}" class="row g-3 align-items-center">
+            <div class="col-md-3">
+                <input type="text" name="busca" class="form-control" placeholder="Buscar por descrição..." value="{{ busca or '' }}">
+            </div>
             <div class="col-md-2">
                 <select name="obra_id" class="form-select">
                     <option value="">Todas as obras</option>
@@ -106,13 +109,13 @@ function aplicarEstadoValores(escondido) {
                     <option value="Outros" {% if categoria_selecionada == 'Outros' %}selected{% endif %}>Outros</option>
                 </select>
             </div>
-            <div class="col-md-2">
+            <div class="col-md-1">
                 <input type="date" name="data_inicio" class="form-control" placeholder="Data inicial" value="{{ data_inicio or '' }}">
             </div>
-            <div class="col-md-2">
+            <div class="col-md-1">
                 <input type="date" name="data_fim" class="form-control" placeholder="Data final" value="{{ data_fim or '' }}">
             </div>
-            <div class="col-md-2">
+            <div class="col-md-1">
                 <div style="display: flex; gap: 5px;">
                     <button type="submit" class="btn btn-outline" style="flex: 1;">
                         <i class="bi bi-funnel"></i>

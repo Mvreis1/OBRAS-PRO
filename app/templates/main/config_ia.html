@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}Configurações de IA - {{ nome_sistema }}{% endblock %}
+{% block page_title %}Configurações de IA{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Configurações de API -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="bi bi-robot me-2"></i>Configurações de APIs de IA</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('main.config_ia') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <!-- OpenAI / ChatGPT -->
+                    <div class="mb-4" style="padding: 20px; background: var(--bg-tertiary); border-radius: 12px; border: 1px solid var(--border-subtle);">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                            <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #10a37f 0%, #0d8c6d 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-chat-dots" style="font-size: 24px; color: white;"></i>
+                            </div>
+                            <div>
+                                <h6 style="margin: 0; font-weight: 600;">OpenAI / ChatGPT</h6>
+                                <p style="margin: 0; font-size: 12px; color: var(--text-muted);">GPT-3.5, GPT-4, GPT-4 Turbo, GPT-4o</p>
+                            </div>
+                            {% if config and config.openai_api_key %}
+                            <span class="badge" style="background: rgba(34, 197, 94, 0.2); color: #4ade80; margin-left: auto;">
+                                <i class="bi bi-check-circle me-1"></i>Configurado
+                            </span>
+                            {% else %}
+                            <span class="badge" style="background: rgba(156, 163, 175, 0.2); color: #9ca3af; margin-left: auto;">
+                                <i class="bi bi-circle me-1"></i>Não configurado
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">API Key</label>
+                            <input type="password" name="openai_api_key" class="form-control"
+                                   value="{{ config.openai_api_key if config and config.openai_api_key else '' }}"
+                                   placeholder="sk-...">
+                            <div class="form-text" style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Obtenha sua chave em <a href="https://platform.openai.com/api-keys" target="_blank" style="color: var(--accent-primary);">platform.openai.com</a>
+                            </div>
+                        </div>
+
+                        <div class="mb-0">
+                            <label class="form-label">Modelo Padrão</label>
+                            <select name="openai_model" class="form-select">
+                                <option value="gpt-3.5-turbo" {% if config and config.openai_model == 'gpt-3.5-turbo' %}selected{% endif %}>GPT-3.5 Turbo (Rápido e econômico)</option>
+                                <option value="gpt-4" {% if config and config.openai_model == 'gpt-4' %}selected{% endif %}>GPT-4 (Mais poderoso)</option>
+                                <option value="gpt-4-turbo" {% if config and config.openai_model == 'gpt-4-turbo' %}selected{% endif %}>GPT-4 Turbo</option>
+                                <option value="gpt-4o" {% if config and config.openai_model == 'gpt-4o' %}selected{% endif %}>GPT-4o (Multimodal)</option>
+                                <option value="gpt-4o-mini" {% if config and config.openai_model == 'gpt-4o-mini' %}selected{% endif %}>GPT-4o Mini (Econômico)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Google Gemini -->
+                    <div class="mb-4" style="padding: 20px; background: var(--bg-tertiary); border-radius: 12px; border: 1px solid var(--border-subtle);">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                            <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #4285f4 0%, #34a853 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-stars" style="font-size: 24px; color: white;"></i>
+                            </div>
+                            <div>
+                                <h6 style="margin: 0; font-weight: 600;">Google Gemini</h6>
+                                <p style="margin: 0; font-size: 12px; color: var(--text-muted);">Modelo Gemini Pro</p>
+                            </div>
+                            {% if config and config.gemini_api_key %}
+                            <span class="badge" style="background: rgba(34, 197, 94, 0.2); color: #4ade80; margin-left: auto;">
+                                <i class="bi bi-check-circle me-1"></i>Configurado
+                            </span>
+                            {% else %}
+                            <span class="badge" style="background: rgba(156, 163, 175, 0.2); color: #9ca3af; margin-left: auto;">
+                                <i class="bi bi-circle me-1"></i>Não configurado
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-0">
+                            <label class="form-label">API Key</label>
+                            <input type="password" name="gemini_api_key" class="form-control"
+                                   value="{{ config.gemini_api_key if config and config.gemini_api_key else '' }}"
+                                   placeholder="AIza...">
+                            <div class="form-text" style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Obtenha sua chave em <a href="https://makersuite.google.com/app/apikey" target="_blank" style="color: var(--accent-primary);">Google AI Studio</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Anthropic Claude -->
+                    <div class="mb-4" style="padding: 20px; background: var(--bg-tertiary); border-radius: 12px; border: 1px solid var(--border-subtle);">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                            <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #d4a574 0%, #c9956b 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-pen" style="font-size: 24px; color: white;"></i>
+                            </div>
+                            <div>
+                                <h6 style="margin: 0; font-weight: 600;">Anthropic Claude</h6>
+                                <p style="margin: 0; font-size: 12px; color: var(--text-muted);">Claude 3 Haiku</p>
+                            </div>
+                            {% if config and config.claude_api_key %}
+                            <span class="badge" style="background: rgba(34, 197, 94, 0.2); color: #4ade80; margin-left: auto;">
+                                <i class="bi bi-check-circle me-1"></i>Configurado
+                            </span>
+                            {% else %}
+                            <span class="badge" style="background: rgba(156, 163, 175, 0.2); color: #9ca3af; margin-left: auto;">
+                                <i class="bi bi-circle me-1"></i>Não configurado
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-0">
+                            <label class="form-label">API Key</label>
+                            <input type="password" name="claude_api_key" class="form-control"
+                                   value="{{ config.claude_api_key if config and config.claude_api_key else '' }}"
+                                   placeholder="sk-ant-...">
+                            <div class="form-text" style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Obtenha sua chave em <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color: var(--accent-primary);">Anthropic Console</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- IA Padrão -->
+                    <div class="mb-4">
+                        <label class="form-label">Assistente Padrão</label>
+                        <select name="ia_padrao" class="form-select">
+                            <option value="local" {% if not config or config.ia_padrao == 'local' %}selected{% endif %}>🤖 Assistente Local (Gratuito)</option>
+                            <option value="gpt-3.5-turbo" {% if config and config.ia_padrao == 'gpt-3.5-turbo' %}selected{% endif %}>🧠 ChatGPT (GPT-3.5)</option>
+                            <option value="gpt-4" {% if config and config.ia_padrao == 'gpt-4' %}selected{% endif %}>💎 ChatGPT (GPT-4)</option>
+                            <option value="gpt-4-turbo" {% if config and config.ia_padrao == 'gpt-4-turbo' %}selected{% endif %}>⚡ ChatGPT (GPT-4 Turbo)</option>
+                            <option value="gpt-4o" {% if config and config.ia_padrao == 'gpt-4o' %}selected{% endif %}>🚀 ChatGPT (GPT-4o)</option>
+                            <option value="gpt-4o-mini" {% if config and config.ia_padrao == 'gpt-4o-mini' %}selected{% endif %}>💨 ChatGPT (GPT-4o Mini)</option>
+                            <option value="gemini" {% if config and config.ia_padrao == 'gemini' %}selected{% endif %}>🔮 Google Gemini</option>
+                            <option value="claude" {% if config and config.ia_padrao == 'claude' %}selected{% endif %}>📝 Anthropic Claude</option>
+                        </select>
+                        <div class="form-text" style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">
+                            <i class="bi bi-info-circle me-1"></i>Selecione qual assistente será usado por padrão no chat
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-2"></i>Salvar Configurações
+                        </button>
+                        <a href="{{ url_for('ia.assistente') }}" class="btn btn-outline">
+                            <i class="bi bi-arrow-left me-2"></i>Voltar ao Assistente
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informações e Status -->
+    <div class="col-md-4">
+        <!-- Status dos Serviços -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title"><i class="bi bi-activity me-2"></i>Status dos Serviços</h5>
+            </div>
+            <div class="card-body">
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: var(--bg-tertiary); border-radius: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-robot" style="color: #22c55e;"></i>
+                            <span>Assistente Local</span>
+                        </div>
+                        <span class="badge" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;">Ativo</span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: var(--bg-tertiary); border-radius: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-chat-dots" style="color: #10a37f;"></i>
+                            <span>OpenAI</span>
+                        </div>
+                        {% if config and config.openai_api_key %}
+                        <span class="badge" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;">Ativo</span>
+                        {% else %}
+                        <span class="badge" style="background: rgba(156, 163, 175, 0.2); color: #9ca3af;">Inativo</span>
+                        {% endif %}
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: var(--bg-tertiary); border-radius: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-stars" style="color: #4285f4;"></i>
+                            <span>Google Gemini</span>
+                        </div>
+                        {% if config and config.gemini_api_key %}
+                        <span class="badge" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;">Ativo</span>
+                        {% else %}
+                        <span class="badge" style="background: rgba(156, 163, 175, 0.2); color: #9ca3af;">Inativo</span>
+                        {% endif %}
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: var(--bg-tertiary); border-radius: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-pen" style="color: #d4a574;"></i>
+                            <span>Anthropic Claude</span>
+                        </div>
+                        {% if config and config.claude_api_key %}
+                        <span class="badge" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;">Ativo</span>
+                        {% else %}
+                        <span class="badge" style="background: rgba(156, 163, 175, 0.2); color: #9ca3af;">Inativo</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dicas -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="bi bi-lightbulb me-2"></i>Dicas</h5>
+            </div>
+            <div class="card-body">
+                <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+                    <p style="margin-bottom: 12px;">
+                        <i class="bi bi-check2 me-2" style="color: #4ade80;"></i>
+                        <strong>Assistente Local:</strong> Funciona sem API key, com respostas baseadas nos dados do sistema.
+                    </p>
+                    <p style="margin-bottom: 12px;">
+                        <i class="bi bi-check2 me-2" style="color: #4ade80;"></i>
+                        <strong>ChatGPT:</strong> Requer créditos na OpenAI. GPT-3.5 é mais econômico.
+                    </p>
+                    <p style="margin-bottom: 12px;">
+                        <i class="bi bi-check2 me-2" style="color: #4ade80;"></i>
+                        <strong>Gemini:</strong> Possui tier gratuito generoso para testes.
+                    </p>
+                    <p style="margin-bottom: 0;">
+                        <i class="bi bi-check2 me-2" style="color: #4ade80;"></i>
+                        <strong>Claude:</strong> Ótimo para análises detalhadas e textos longos.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

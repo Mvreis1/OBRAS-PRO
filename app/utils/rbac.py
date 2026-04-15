@@ -1,9 +1,10 @@
 """
 Decoradores e helpers para controle de acesso (RBAC)
 """
-from functools import wraps
-from flask import session, redirect, url_for, flash, abort, request
 
+from functools import wraps
+
+from flask import abort, flash, redirect, request, session, url_for
 
 _usuario_cache = {}
 
@@ -11,18 +12,19 @@ _usuario_cache = {}
 def get_usuario_atual():
     """Retorna o usuário logado (com cache por request)"""
     from flask import g
-    
+
     if hasattr(g, 'usuario_cache'):
         return g.usuario_cache
-    
+
     usuario_id = session.get('usuario_id')
     if not usuario_id:
         return None
-    
+
     # Import tardio para evitar import circular
-    from app.models import db, Usuario
+    from app.models import Usuario, db
+
     usuario = db.session.get(Usuario, usuario_id)
-    
+
     # Armazenar em g para evitar múltiplas queries na mesma request
     g.usuario_cache = usuario
     return usuario
@@ -50,6 +52,7 @@ def require_permission(modulo, acao=None, redirect_url='main.dashboard'):
         acao: Ação específica (ver, criar, editar, excluir, exportar) ou None para qualquer ação
         redirect_url: URL para redirecionar se não tiver permissão
     """
+
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
@@ -66,7 +69,9 @@ def require_permission(modulo, acao=None, redirect_url='main.dashboard'):
                 return redirect(url_for(redirect_url))
 
             return f(*args, **kwargs)
+
         return decorated_function
+
     return decorator
 
 
@@ -79,6 +84,7 @@ def require_any_permission(permissions, redirect_url='main.dashboard'):
         def minha_rota():
             ...
     """
+
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
@@ -93,7 +99,9 @@ def require_any_permission(permissions, redirect_url='main.dashboard'):
                 return redirect(url_for(redirect_url))
 
             return f(*args, **kwargs)
+
         return decorated_function
+
     return decorator
 
 
@@ -101,6 +109,7 @@ def require_all_permissions(permissions, redirect_url='main.dashboard'):
     """
     Decorator que requer TODAS as permissões listadas.
     """
+
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
@@ -115,12 +124,15 @@ def require_all_permissions(permissions, redirect_url='main.dashboard'):
                 return redirect(url_for(redirect_url))
 
             return f(*args, **kwargs)
+
         return decorated_function
+
     return decorator
 
 
 class Modulos:
     """Constantes de módulos do sistema"""
+
     DASHBOARD = 'dashboard'
     OBRAS = 'obras'
     LANCAMENTOS = 'lancamentos'
@@ -139,6 +151,7 @@ class Modulos:
 
 class Acoes:
     """Constantes de ações do sistema"""
+
     VER = 'ver'
     CRIAR = 'criar'
     EDITAR = 'editar'

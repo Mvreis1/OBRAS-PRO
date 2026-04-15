@@ -39,33 +39,102 @@
     <div class="card-body">
         <div class="row g-3 align-items-center">
             <div class="col-md-4">
-                <input type="text" class="form-control" placeholder="Buscar obra..." style="background: var(--bg-tertiary);">
+                <input type="text" id="filtroBusca" class="form-control" placeholder="Buscar obra..." style="background: var(--bg-tertiary);" onkeyup="filtrarObras()">
             </div>
             <div class="col-md-3">
-                <select class="form-select" style="background: var(--bg-tertiary);">
+                <select id="filtroStatus" class="form-select" style="background: var(--bg-tertiary);" onchange="filtrarObras()">
                     <option value="">Todos os status</option>
                     <option value="Planejamento">Planejamento</option>
                     <option value="Em Execução">Em Execução</option>
                     <option value="Paralisada">Paralisada</option>
                     <option value="Concluída">Concluída</option>
+                    <option value="Entregue">Entregue</option>
                 </select>
             </div>
             <div class="col-md-3">
-                <select class="form-select" style="background: var(--bg-tertiary);">
+                <select id="filtroOrdenar" class="form-select" style="background: var(--bg-tertiary);" onchange="ordenarObras()">
                     <option value="">Ordenar por</option>
                     <option value="nome">Nome</option>
-                    <option value="orcamento">Orçamento</option>
-                    <option value="progresso">Progresso</option>
+                    <option value="orcamento">Orçamento (maior)</option>
+                    <option value="progresso">Progresso (maior)</option>
                 </select>
             </div>
             <div class="col-md-2">
-                <button class="btn btn-outline w-100">
-                    <i class="bi bi-funnel me-2"></i>Filtrar
+                <button class="btn btn-outline w-100" onclick="limparFiltros()">
+                    <i class="bi bi-x-circle me-2"></i>Limpar
                 </button>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+function filtrarObras() {
+    const busca = document.getElementById('filtroBusca').value.toLowerCase();
+    const status = document.getElementById('filtroStatus').value;
+    const cards = document.querySelectorAll('.obra-card');
+
+    cards.forEach(card => {
+        const nome = card.dataset.nome.toLowerCase();
+        const cliente = card.dataset.cliente.toLowerCase();
+        const cardStatus = card.dataset.status;
+
+        const matchBusca = nome.includes(busca) || cliente.includes(busca);
+        const matchStatus = !status || cardStatus === status;
+
+        if (matchBusca && matchStatus) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+
+    atualizarContadores();
+}
+
+function ordenarObras() {
+    const ordenar = document.getElementById('filtroOrdenar').value;
+    const container = document.querySelector('.row.g-4');
+    const cards = Array.from(document.querySelectorAll('.obra-card'));
+
+    if (!ordenar) return;
+
+    cards.sort((a, b) => {
+        if (ordenar === 'nome') {
+            return a.dataset.nome.localeCompare(b.dataset.nome);
+        } else if (ordenar === 'orcamento') {
+            return parseFloat(b.dataset.orcamento) - parseFloat(a.dataset.orcamento);
+        } else if (ordenar === 'progresso') {
+            return parseInt(b.dataset.progresso) - parseInt(a.dataset.progresso);
+        }
+        return 0;
+    });
+
+    cards.forEach(card => container.appendChild(card));
+}
+
+function limparFiltros() {
+    document.getElementById('filtroBusca').value = '';
+    document.getElementById('filtroStatus').value = '';
+    document.getElementById('filtroOrdenar').value = '';
+
+    const cards = document.querySelectorAll('.obra-card');
+    cards.forEach(card => card.style.display = '');
+
+    atualizarContadores();
+}
+
+function atualizarContadores() {
+    const visiveis = document.querySelectorAll('.obra-card[style=""], .obra-card:not([style*="display: none"])').length;
+    const total = document.querySelectorAll('.obra-card').length;
+
+    // Atualizar contador se existir
+    const contador = document.getElementById('contadorObras');
+    if (contador) {
+        contador.textContent = `Mostrando ${visiveis} de ${total} obras`;
+    }
+}
+</script>
 
 <!-- Works Grid -->
 {% set alertas_dict = {} %}
@@ -78,7 +147,12 @@
 <div class="row g-4">
     {% for obra in obras %}
     {% set alerta_obra = alertas_dict.get(obra.nome) %}
-    <div class="col-md-6 col-xl-4">
+    <div class="col-md-6 col-xl-4 obra-card"
+         data-nome="{{ obra.nome }}"
+         data-cliente="{{ obra.cliente or '' }}"
+         data-status="{{ obra.status }}"
+         data-orcamento="{{ obra.orcamento_previsto }}"
+         data-progresso="{{ obra.progresso }}">
         <div class="card h-100" style="cursor: pointer; transition: all 0.2s ease; {% if alerta_obra %}border: 2px solid {{ alerta_obra.cor }};{% endif %}" onclick="window.location='{{ url_for('main.obra_detalhe', obra_id=obra.id) }}'">
             {% if alerta_obra %}
             <div style="background: {{ alerta_obra.cor }}; padding: 6px 12px; font-size: 11px; font-weight: 600; color: white;">

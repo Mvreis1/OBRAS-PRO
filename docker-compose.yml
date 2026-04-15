@@ -1,69 +1,163 @@
-# Docker Compose para OBRAS PRO
+# ============================================
+# Docker Compose para OBRAS FINANCEIRO PRO
 # Desenvolvimento e Produção
+# ============================================
 
 services:
-  # Aplicação Flask
+  # ==========================================
+  # Aplicação Flask (Gunicorn)
+  # ==========================================
   app:
-    build: .
+    build:
+      context: .
+      target: production
+    container_name: obras_app
     ports:
-      - "5000:5000"
+      - "${APP_PORT:-5000}:5000"
     environment:
-      - FLASK_ENV=production
-      - FLASK_DEBUG=false
-      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}
-      - DATABASE_URL=${DATABASE_URL:-sqlite:///instance/obras.db}
-      - RATELIMIT_STORAGE_URL=${RATELIMIT_STORAGE_URL:-memory://}
+      - FLASK_ENV=${FLASK_ENV:-production}
+      - FLASK_DEBUG=${FLASK_DEBUG:-false}
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-obras_user}:${POSTGRES_PASSWORD:-obras_pass}@postgres:5432/${POSTGRES_DB:-obras_financeiro}
+      - REDIS_URL=redis://redis:6379/0
       - CACHE_TYPE=redis
-      - CACHE_REDIS_URL=${CACHE_REDIS_URL:-redis://redis:6379/0}
+      - CACHE_REDIS_URL=redis://redis:6379/0
+      - RATELIMIT_STORAGE_URL=redis://redis:6379/1
+      - MAIL_SERVER=${MAIL_SERVER}
+      - MAIL_PORT=${MAIL_PORT:-587}
+      - MAIL_USE_TLS=${MAIL_USE_TLS:-true}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - MAIL_DEFAULT_SENDER=${MAIL_DEFAULT_SENDER}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-3.5-turbo}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - CLAUDE_API_KEY=${CLAUDE_API_KEY}
+      - SESSION_COOKIE_SECURE=${SESSION_COOKIE_SECURE:-false}
+      - SESSION_LIFETIME=${SESSION_LIFETIME:-86400}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      - GUNICORN_WORKERS=${GUNICORN_WORKERS:-4}
+      - GUNICORN_THREADS=${GUNICORN_THREADS:-4}
+      - GUNICORN_TIMEOUT=${GUNICORN_TIMEOUT:-120}
     volumes:
-      - ./instance:/app/instance
-      - ./logs:/app/logs
+      - app_logs:/app/logs
+      - app_uploads:/app/uploads
     depends_on:
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/monitor/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/healthz"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    networks:
+      - obras_network
 
-  # Redis para cache e rate limiting
+  # ==========================================
+  # PostgreSQL Database
+  # ==========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: obras_postgres
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-obras_financeiro}
+      - POSTGRES_USER=${POSTGRES_USER:-obras_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-obras_pass}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-obras_user} -d ${POSTGRES_DB:-obras_financeiro}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - obras_network
+
+  # ==========================================
+  # Redis (Cache + Rate Limiting + Sessions)
+  # ==========================================
   redis:
     image: redis:7-alpine
+    container_name: obras_redis
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - obras_network
 
-  # Nginx como reverse proxy
+  # ==========================================
+  # Nginx (Reverse Proxy + Static Files)
+  # ==========================================
   nginx:
     image: nginx:alpine
+    container_name: obras_nginx
     ports:
-      - "80:80"
-      - "443:443"
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
+      - app_static:/var/www/static:ro
     depends_on:
-      - app
+      app:
+        condition: service_healthy
     restart: unless-stopped
+    networks:
+      - obras_network
 
-  # Agendador de tarefas (APScheduler)
+  # ==========================================
+  # Agendador de Tarefas (APScheduler)
+  # ==========================================
   scheduler:
-    build: .
+    build:
+      context: .
+      target: production
+    container_name: obras_scheduler
     command: python run.py --scheduler
     environment:
-      - FLASK_ENV=production
-      - DATABASE_URL=${DATABASE_URL}
+      - FLASK_ENV=${FLASK_ENV:-production}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-obras_user}:${POSTGRES_PASSWORD:-obras_pass}@postgres:5432/${POSTGRES_DB:-obras_financeiro}
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY}
     depends_on:
-      - app
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     restart: unless-stopped
+    networks:
+      - obras_network
 
 volumes:
+  postgres_data:
+    driver: local
   redis_data:
+    driver: local
+  app_logs:
+    driver: local
+  app_uploads:
+    driver: local
+  app_static:
+    driver: local
 
 networks:
-  default:
-    name: obras_pro_network
+  obras_network:
+    driver: bridge
+    name: obras_financeiro_network

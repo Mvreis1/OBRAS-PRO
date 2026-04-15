@@ -23,3 +23,8 @@ psutil==5.9.8
 Flask-Login==0.6.3
 bcrypt==4.1.2
 requests==2.31.0
+python-decouple==3.8
+
+# IA opcional
+google-generativeai==0.3.2
+anthropic==0.21.3

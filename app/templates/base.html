@@ -85,6 +85,29 @@
             min-height: 100vh;
             line-height: 1.5;
         }
+
+        /* Background personalizado */
+        body.bg-imagem {
+            background-image: var(--bg-image, none);
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        body.bg-imagem::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(9, 9, 11, 0.85);
+            z-index: -1;
+        }
+
+        body.bg-imagem.tema-claro::before {
+            background: rgba(248, 250, 252, 0.90);
+        }
         
         /* Scrollbar */
         ::-webkit-scrollbar {
@@ -560,15 +583,250 @@
         
         /* Dark mode: texto branco nos inputs */
         .form-control, .form-select {
-            color: #ffffff;
+            color: #ffffff !important;
+            background-color: var(--bg-tertiary) !important;
         }
-        
+
         /* Light mode: texto preto nos inputs */
         body.tema-claro .form-control,
         body.tema-claro .form-select {
-            color: #0f172a;
-            background: #ffffff;
+            color: #0f172a !important;
+            background-color: #ffffff !important;
         }
+
+        /* Corrigir placeholder no dark mode */
+        .form-control::placeholder {
+            color: var(--text-muted) !important;
+            opacity: 1;
+        }
+
+        /* Corrigir texto em cards no dark mode */
+        .card-body {
+            color: var(--text-primary);
+        }
+
+        .card-body p,
+        .card-body span,
+        .card-body div {
+            color: inherit;
+        }
+
+        /* Corrigir tabelas no dark mode */
+        .table {
+            color: var(--text-primary);
+            background-color: var(--bg-secondary);
+        }
+
+        .table thead th {
+            color: var(--text-muted);
+            background-color: var(--bg-tertiary);
+            border-color: var(--border-subtle);
+        }
+
+        .table tbody td {
+            color: var(--text-secondary);
+            border-color: var(--border-subtle);
+        }
+
+        .table tbody tr {
+            background-color: var(--bg-secondary);
+        }
+
+        .table tbody tr:hover {
+            background-color: var(--bg-tertiary);
+        }
+
+        /* Corrigir badges e labels */
+        .badge {
+            color: white;
+        }
+
+        /* Corrigir textos em elementos específicos */
+        .text-muted {
+            color: var(--text-muted) !important;
+        }
+
+        /* Corrigir fundo de elementos com bg-light */
+        .bg-light {
+            background-color: var(--bg-tertiary) !important;
+        }
+
+        /* Corrigir list-group */
+        .list-group-item {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            border-color: var(--border-subtle);
+        }
+
+        /* Corrigir dropdown-menu */
+        .dropdown-menu {
+            background-color: var(--bg-secondary);
+            border-color: var(--border-subtle);
+        }
+
+        .dropdown-item {
+            color: var(--text-secondary);
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        /* Corrigir modal */
+        .modal-content {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .modal-header {
+            border-bottom-color: var(--border-subtle);
+        }
+
+        .modal-footer {
+            border-top-color: var(--border-subtle);
+        }
+
+        /* Corrigir accordion/collapse */
+        .accordion-button {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .accordion-button:not(.collapsed) {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .accordion-body {
+            background-color: var(--bg-secondary);
+            color: var(--text-secondary);
+        }
+
+        /* Corrigir table-light no dark mode */
+        .table-light {
+            background-color: var(--bg-tertiary) !important;
+            color: var(--text-primary) !important;
+        }
+
+        .table-light th,
+        .table-light td {
+            background-color: var(--bg-tertiary) !important;
+            color: var(--text-primary) !important;
+            border-color: var(--border-subtle) !important;
+        }
+
+        /* Corrigir bg-opacity no dark mode */
+        .bg-success.bg-opacity-10 {
+            background-color: rgba(34, 197, 94, 0.15) !important;
+        }
+
+        .bg-danger.bg-opacity-10 {
+            background-color: rgba(239, 68, 68, 0.15) !important;
+        }
+
+        /* Corrigir text-success e text-danger */
+        .text-success {
+            color: #4ade80 !important;
+        }
+
+        .text-danger {
+            color: #f87171 !important;
+        }
+
+        /* Corrigir nav-tabs */
+        .nav-tabs {
+            border-bottom-color: var(--border-subtle);
+        }
+
+        .nav-tabs .nav-link {
+            color: var(--text-secondary);
+            background-color: transparent;
+            border-color: transparent;
+        }
+
+        .nav-tabs .nav-link:hover {
+            color: var(--text-primary);
+            border-color: var(--border-subtle);
+        }
+
+        .nav-tabs .nav-link.active {
+            color: var(--text-primary);
+            background-color: var(--bg-tertiary);
+            border-color: var(--border-subtle) var(--border-subtle) var(--bg-tertiary);
+        }
+
+        /* Corrigir tab-content */
+        .tab-content {
+            color: var(--text-primary);
+        }
+
+        /* Corrigir cards dentro de tabs */
+        .tab-pane .card {
+            background-color: var(--bg-secondary);
+        }
+
+        /* Garantir que textos em cards sejam visíveis */
+        .card h1, .card h2, .card h3, .card h4, .card h5, .card h6,
+        .card p, .card span, .card div, .card small, .card label {
+            color: inherit;
+        }
+
+        .card h6.text-muted,
+        .card p.text-muted,
+        .card small.text-muted,
+        .card label.form-label {
+            color: var(--text-muted) !important;
+        }
+
+        /* Corrigir display-4 e outros tamanhos */
+        .display-4 {
+            color: var(--text-primary);
+        }
+
+        /* Corrigir badges do Bootstrap */
+        .badge.bg-primary { background-color: var(--accent-primary) !important; color: white !important; }
+        .badge.bg-success { background-color: var(--success) !important; color: white !important; }
+        .badge.bg-danger { background-color: var(--danger) !important; color: white !important; }
+        .badge.bg-warning { background-color: var(--warning) !important; color: black !important; }
+        .badge.bg-info { background-color: var(--info) !important; color: white !important; }
+        .badge.bg-secondary { background-color: var(--text-muted) !important; color: white !important; }
+
+        /* Corrigir textos em tabelas */
+        .table tbody tr td,
+        .table tbody tr th {
+            color: var(--text-secondary);
+        }
+
+        .table tbody tr:hover td,
+        .table tbody tr:hover th {
+            color: var(--text-primary);
+        }
+
+        /* Corrigir links em tabelas */
+        .table a {
+            color: var(--accent-primary);
+        }
+
+        .table a:hover {
+            color: var(--accent-primary-hover);
+        }
+
+        /* Corrigir hr */
+        hr {
+            border-color: var(--border-subtle);
+            opacity: 1;
+        }
+
+        /* Corrigir border */
+        .border {
+            border-color: var(--border-subtle) !important;
+        }
+
+        .border-top { border-top-color: var(--border-subtle) !important; }
+        .border-bottom { border-bottom-color: var(--border-subtle) !important; }
+        .border-start { border-left-color: var(--border-subtle) !important; }
+        .border-end { border-right-color: var(--border-subtle) !important; }
         
         .form-control:focus, .form-select:focus {
             outline: none;
@@ -680,6 +938,9 @@
                 <a href="{{ url_for('ia.assistente') }}" class="nav-item {% if 'assistente' in request.endpoint %}active{% endif %}">
                     <i class="bi bi-chat-square-dots"></i> Assistente IA
                 </a>
+                <a href="{{ url_for('main.config_ia') }}" class="nav-item {% if 'config_ia' in request.endpoint %}active{% endif %}">
+                    <i class="bi bi-robot"></i> Configurar IAs
+                </a>
                 <a href="{{ url_for('auth.configurar_2fa') }}" class="nav-item {% if '2fa' in request.endpoint %}active{% endif %}">
                     <i class="bi bi-shield-lock"></i> Segurança 2FA
                 </a>
@@ -703,6 +964,9 @@
         <div class="sidebar-footer">
             <button onclick="toggleTheme()" class="logout-btn" style="margin-bottom: 10px;">
                 <i class="bi bi-moon-stars" id="themeIcon"></i> <span id="themeText">Modo Claro</span>
+            </button>
+            <button onclick="abrirModalBackground()" class="logout-btn" style="margin-bottom: 10px;">
+                <i class="bi bi-image"></i> <span>Personalizar Fundo</span>
             </button>
             <div style="text-align: center; margin-bottom: 12px; font-size: 11px; color: var(--text-muted);">
                 {{ nome_sistema }} v1.0
@@ -748,6 +1012,71 @@
         </div>
     </div>
     
+    <!-- Modal de Personalização de Background -->
+    <div class="modal fade" id="modalBackground" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content" style="background: var(--bg-secondary); border: 1px solid var(--border-subtle);">
+                <div class="modal-header" style="border-bottom: 1px solid var(--border-subtle);">
+                    <h5 class="modal-title" style="color: var(--text-primary);">Personalizar Fundo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label style="color: var(--text-secondary); font-size: 13px; margin-bottom: 8px; display: block;">Escolha um fundo:</label>
+                        <div class="row g-2">
+                            <div class="col-4">
+                                <div class="bg-option" onclick="selecionarBackground('padrao')" style="cursor: pointer; border: 2px solid var(--border-subtle); border-radius: 8px; padding: 10px; text-align: center; transition: all 0.2s;" data-bg="padrao">
+                                    <div style="width: 100%; height: 60px; background: var(--bg-primary); border-radius: 4px; margin-bottom: 5px;"></div>
+                                    <small style="color: var(--text-secondary);">Padrão</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="bg-option" onclick="selecionarBackground('construcao1')" style="cursor: pointer; border: 2px solid var(--border-subtle); border-radius: 8px; padding: 10px; text-align: center; transition: all 0.2s;" data-bg="construcao1">
+                                    <div style="width: 100%; height: 60px; background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); border-radius: 4px; margin-bottom: 5px;"></div>
+                                    <small style="color: var(--text-secondary);">Construção</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="bg-option" onclick="selecionarBackground('construcao2')" style="cursor: pointer; border: 2px solid var(--border-subtle); border-radius: 8px; padding: 10px; text-align: center; transition: all 0.2s;" data-bg="construcao2">
+                                    <div style="width: 100%; height: 60px; background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%); border-radius: 4px; margin-bottom: 5px;"></div>
+                                    <small style="color: var(--text-secondary);">Industrial</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="bg-option" onclick="selecionarBackground('arquitetura1')" style="cursor: pointer; border: 2px solid var(--border-subtle); border-radius: 8px; padding: 10px; text-align: center; transition: all 0.2s;" data-bg="arquitetura1">
+                                    <div style="width: 100%; height: 60px; background: linear-gradient(135deg, #744210 0%, #c05621 100%); border-radius: 4px; margin-bottom: 5px;"></div>
+                                    <small style="color: var(--text-secondary);">Madeira</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="bg-option" onclick="selecionarBackground('concreto')" style="cursor: pointer; border: 2px solid var(--border-subtle); border-radius: 8px; padding: 10px; text-align: center; transition: all 0.2s;" data-bg="concreto">
+                                    <div style="width: 100%; height: 60px; background: linear-gradient(135deg, #4a5568 0%, #718096 100%); border-radius: 4px; margin-bottom: 5px;"></div>
+                                    <small style="color: var(--text-secondary);">Concreto</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="bg-option" onclick="selecionarBackground('upload')" style="cursor: pointer; border: 2px solid var(--border-subtle); border-radius: 8px; padding: 10px; text-align: center; transition: all 0.2s;" data-bg="upload">
+                                    <div style="width: 100%; height: 60px; background: var(--bg-tertiary); border-radius: 4px; margin-bottom: 5px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="bi bi-upload" style="color: var(--text-muted);"></i>
+                                    </div>
+                                    <small style="color: var(--text-secondary);">Upload</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="uploadSection" style="display: none;">
+                        <label style="color: var(--text-secondary); font-size: 13px; margin-bottom: 8px; display: block;">Envie sua imagem:</label>
+                        <input type="file" id="bgUpload" accept="image/*" class="form-control" onchange="uploadBackground(event)">
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--border-subtle);">
+                    <button type="button" class="btn btn-outline" data-bs-dismiss="modal">Fechar</button>
+                    <button type="button" class="btn btn-primary" onclick="aplicarBackground()">Aplicar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Theme Toggle
@@ -757,19 +1086,140 @@
             localStorage.setItem('tema', isLight ? 'claro' : 'escuro');
             updateThemeButton();
         }
-        
+
         function updateThemeButton() {
             const isLight = document.body.classList.contains('tema-claro');
             document.getElementById('themeIcon').className = isLight ? 'bi bi-moon-stars' : 'bi bi-sun';
             document.getElementById('themeText').textContent = isLight ? 'Modo Escuro' : 'Modo Claro';
         }
-        
+
         // Load saved theme
         const savedTheme = localStorage.getItem('tema');
         if (savedTheme === 'claro') {
             document.body.classList.add('tema-claro');
         }
         updateThemeButton();
+
+        // Background Personalizado
+        let bgSelecionado = localStorage.getItem('background') || 'padrao';
+        let bgCustomImage = localStorage.getItem('backgroundImage') || null;
+
+        const bgOptions = {
+            'padrao': null,
+            'construcao1': 'linear-gradient(135deg, #1a365d 0%, #2c5282 50%, #2b6cb0 100%)',
+            'construcao2': 'linear-gradient(135deg, #1a202c 0%, #2d3748 50%, #4a5568 100%)',
+            'arquitetura1': 'linear-gradient(135deg, #744210 0%, #c05621 50%, #dd6b20 100%)',
+            'concreto': 'linear-gradient(135deg, #2d3748 0%, #4a5568 50%, #718096 100%)',
+            'upload': null
+        };
+
+        function abrirModalBackground() {
+            const modal = new bootstrap.Modal(document.getElementById('modalBackground'));
+            modal.show();
+            atualizarSelecaoBg();
+        }
+
+        function selecionarBackground(bg) {
+            bgSelecionado = bg;
+            atualizarSelecaoBg();
+
+            if (bg === 'upload') {
+                document.getElementById('uploadSection').style.display = 'block';
+            } else {
+                document.getElementById('uploadSection').style.display = 'none';
+            }
+        }
+
+        function atualizarSelecaoBg() {
+            document.querySelectorAll('.bg-option').forEach(el => {
+                el.style.borderColor = 'var(--border-subtle)';
+                el.style.transform = 'scale(1)';
+            });
+            const selecionado = document.querySelector(`[data-bg="${bgSelecionado}"]`);
+            if (selecionado) {
+                selecionado.style.borderColor = 'var(--accent-primary)';
+                selecionado.style.transform = 'scale(1.05)';
+            }
+        }
+
+        function uploadBackground(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    bgCustomImage = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function aplicarBackground() {
+            localStorage.setItem('background', bgSelecionado);
+
+            if (bgSelecionado === 'upload' && bgCustomImage) {
+                localStorage.setItem('backgroundImage', bgCustomImage);
+                document.body.style.setProperty('--bg-image', `url(${bgCustomImage})`);
+                document.body.classList.add('bg-imagem');
+            } else if (bgSelecionado === 'padrao') {
+                document.body.classList.remove('bg-imagem');
+                document.body.style.removeProperty('--bg-image');
+                localStorage.removeItem('backgroundImage');
+            } else {
+                document.body.classList.remove('bg-imagem');
+                document.body.style.removeProperty('--bg-image');
+                document.body.style.background = bgOptions[bgSelecionado];
+            }
+
+            bootstrap.Modal.getInstance(document.getElementById('modalBackground')).hide();
+        }
+
+        // Carregar background salvo
+        function carregarBackground() {
+            const bgSalvo = localStorage.getItem('background') || 'padrao';
+            if (bgSalvo === 'upload') {
+                const imgSalva = localStorage.getItem('backgroundImage');
+                if (imgSalva) {
+                    document.body.style.setProperty('--bg-image', `url(${imgSalva})`);
+                    document.body.classList.add('bg-imagem');
+                }
+            } else if (bgSalvo !== 'padrao' && bgOptions[bgSalvo]) {
+                document.body.style.background = bgOptions[bgSalvo];
+            }
+        }
+        carregarBackground();
+
+        // Função de busca CEP (ViaCEP)
+        function buscarCEP(cep, campos) {
+            cep = cep.replace(/\D/g, '');
+            if (cep.length !== 8) return;
+
+            fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.erro) {
+                        if (campos.logradouro && data.logradouro) {
+                            document.getElementById(campos.logradouro).value = data.logradouro;
+                        }
+                        if (campos.bairro && data.bairro) {
+                            document.getElementById(campos.bairro).value = data.bairro;
+                        }
+                        if (campos.cidade && data.localidade) {
+                            document.getElementById(campos.cidade).value = data.localidade;
+                        }
+                        if (campos.uf && data.uf) {
+                            document.getElementById(campos.uf).value = data.uf;
+                        }
+                        if (campos.endereco && data.logradouro) {
+                            let endereco = data.logradouro;
+                            if (data.bairro) endereco += `, ${data.bairro}`;
+                            if (data.localidade) endereco += `, ${data.localidade}`;
+                            if (data.uf) endereco += ` - ${data.uf}`;
+                            document.getElementById(campos.endereco).value = endereco;
+                        }
+                    }
+                })
+                .catch(error => console.error('Erro ao buscar CEP:', error));
+        }
     </script>
     {% block extra_js %}{% endblock %}
 </body>

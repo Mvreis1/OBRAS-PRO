@@ -1,14 +1,17 @@
 """
 Helper para importacao de dados de Excel (.xlsx, .csv)
 """
+
 import csv
 import io
-from datetime import datetime, date
+from datetime import date, datetime
+
 from openpyxl import load_workbook
 
 
 class ExcelImportError(Exception):
     """Excecao para erros de importacao"""
+
     pass
 
 
@@ -40,6 +43,7 @@ def parse_date(value):
     # Tenta converter de numero Excel (dias desde 1899-12-30)
     try:
         from datetime import timedelta
+
         excel_base = date(1899, 12, 30)
         days = int(float(value_str))
         return excel_base + timedelta(days=days)
@@ -91,15 +95,13 @@ def importar_lancamentos_excel(file_stream, filename):
         lancamentos_list: lista de dicts com os dados
         erros_list: lista de mensagens de erro por linha
     """
-    lancamentos = []
-    erros = []
 
     if filename.lower().endswith('.csv'):
         return _importar_csv(file_stream)
     elif filename.lower().endswith('.xlsx'):
         return _importar_xlsx(file_stream)
     else:
-        raise ExcelImportError("Formato nao suportado. Use .xlsx ou .csv")
+        raise ExcelImportError('Formato nao suportado. Use .xlsx ou .csv')
 
 
 def _importar_csv(file_stream):
@@ -115,7 +117,9 @@ def _importar_csv(file_stream):
         try:
             text = content.decode('latin-1')
         except UnicodeDecodeError:
-            raise ExcelImportError("Nao foi possivel decodificar o arquivo. Use UTF-8 ou Latin-1.")
+            raise ExcelImportError(
+                'Nao foi possivel decodificar o arquivo. Use UTF-8 ou Latin-1.'
+            ) from None
 
     # Detecta delimitador
     sample = text[:1024]
@@ -129,7 +133,7 @@ def _importar_csv(file_stream):
             if lancamento:
                 lancamentos.append(lancamento)
         except Exception as e:
-            erros.append(f"Linha {idx}: {str(e)}")
+            erros.append(f'Linha {idx}: {e!s}')
 
     return lancamentos, erros
 
@@ -145,7 +149,7 @@ def _importar_xlsx(file_stream):
 
         # Detecta cabecalhos
         headers = {}
-        header_row = list(ws.iter_rows(min_row=1, max_row=1, values_only=True))[0]
+        header_row = next(iter(ws.iter_rows(min_row=1, max_row=1, values_only=True)))
 
         header_map = {
             'obra': ['obra', 'nome obra', 'obra nome', 'projeto', 'nome'],
@@ -173,7 +177,7 @@ def _importar_xlsx(file_stream):
         required = ['descricao', 'valor', 'data']
         missing = [r for r in required if r not in headers]
         if missing:
-            raise ExcelImportError(f"Colunas obrigatorias nao encontradas: {', '.join(missing)}")
+            raise ExcelImportError(f'Colunas obrigatorias nao encontradas: {", ".join(missing)}')
 
         # Processa linhas
         for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
@@ -186,10 +190,10 @@ def _importar_xlsx(file_stream):
                 if lancamento:
                     lancamentos.append(lancamento)
             except Exception as e:
-                erros.append(f"Linha {row_idx}: {str(e)}")
+                erros.append(f'Linha {row_idx}: {e!s}')
 
     except Exception as e:
-        raise ExcelImportError(f"Erro ao ler arquivo Excel: {str(e)}")
+        raise ExcelImportError(f'Erro ao ler arquivo Excel: {e!s}') from e
 
     return lancamentos, erros
 
@@ -205,17 +209,19 @@ def _parse_row(row_dict, line_num):
     # Campos obrigatorios
     descricao = normalized.get('descricao') or normalized.get('desc') or normalized.get('historico')
     if not descricao or str(descricao).strip() == '':
-        raise ValueError("Descricao e obrigatoria")
+        raise ValueError('Descricao e obrigatoria')
 
     valor_str = normalized.get('valor') or normalized.get('valor r$')
     valor = parse_float(valor_str)
     if valor == 0:
-        raise ValueError("Valor invalido ou zero")
+        raise ValueError('Valor invalido ou zero')
 
-    data_str = normalized.get('data') or normalized.get('data lancamento') or normalized.get('vencimento')
+    data_str = (
+        normalized.get('data') or normalized.get('data lancamento') or normalized.get('vencimento')
+    )
     data = parse_date(data_str)
     if not data:
-        raise ValueError(f"Data invalida: {data_str}")
+        raise ValueError(f'Data invalida: {data_str}')
 
     # Detecta tipo (Receita/Despesa)
     tipo = normalized.get('tipo', '').strip()
@@ -236,7 +242,8 @@ def _parse_row(row_dict, line_num):
         'tipo': tipo,
         'valor': valor,
         'data': data,
-        'forma_pagamento': normalized.get('forma_pagamento') or normalized.get('forma pagamento', 'Transferencia'),
+        'forma_pagamento': normalized.get('forma_pagamento')
+        or normalized.get('forma pagamento', 'Transferencia'),
         'status_pagamento': normalized.get('status_pagamento') or normalized.get('status', 'Pago'),
         'documento': normalized.get('documento', ''),
         'observacoes': normalized.get('observacoes') or normalized.get('obs', ''),
@@ -245,6 +252,7 @@ def _parse_row(row_dict, line_num):
 
 def _parse_row_from_indices(row_tuple, headers, line_num):
     """Parse de uma linha do Excel (tuple) usando indices"""
+
     def get_val(key, default=''):
         if key not in headers:
             return default
@@ -257,15 +265,15 @@ def _parse_row_from_indices(row_tuple, headers, line_num):
     # Campos obrigatorios
     descricao = get_val('descricao')
     if not descricao or str(descricao).strip() == '':
-        raise ValueError("Descricao e obrigatoria")
+        raise ValueError('Descricao e obrigatoria')
 
     valor = parse_float(get_val('valor', 0))
     if valor == 0:
-        raise ValueError("Valor invalido ou zero")
+        raise ValueError('Valor invalido ou zero')
 
     data = parse_date(get_val('data'))
     if not data:
-        raise ValueError("Data invalida")
+        raise ValueError('Data invalida')
 
     # Detecta tipo
     tipo_val = str(get_val('tipo', '')).strip()
@@ -295,14 +303,25 @@ def _parse_row_from_indices(row_tuple, headers, line_num):
 def gerar_modelo_excel():
     """Gera arquivo Excel modelo para importacao"""
     from openpyxl import Workbook
-    from openpyxl.styles import Font, PatternFill, Alignment
+    from openpyxl.styles import Alignment, Font, PatternFill
 
     wb = Workbook()
     ws = wb.active
-    ws.title = "Lancamentos"
+    ws.title = 'Lancamentos'
 
     # Cabecalhos
-    headers = ['Obra', 'Descricao', 'Categoria', 'Tipo', 'Valor', 'Data', 'Forma Pagamento', 'Status', 'Documento', 'Observacoes']
+    headers = [
+        'Obra',
+        'Descricao',
+        'Categoria',
+        'Tipo',
+        'Valor',
+        'Data',
+        'Forma Pagamento',
+        'Status',
+        'Documento',
+        'Observacoes',
+    ]
     ws.append(headers)
 
     # Estilo do cabecalho
@@ -312,9 +331,42 @@ def gerar_modelo_excel():
         cell.alignment = Alignment(horizontal='center')
 
     # Dados de exemplo
-    exemplo1 = ['Edificio Alpha', 'Compra de cimento', 'Materiais', 'Despesa', 5000.00, '15/01/2026', 'Transferencia', 'Pago', 'NF-123', 'Pagamento a vista']
-    exemplo2 = ['Edificio Alpha', 'Receita de vendas', 'Vendas', 'Receita', 15000.00, '20/01/2026', 'Boleto', 'Pago', '', 'Parcela 1']
-    exemplo3 = ['Residencial Parque', 'Mao de obra', 'Servicos', 'Despesa', 3500.00, '10/01/2026', 'PIX', 'Pago', '', 'Pedreiro']
+    exemplo1 = [
+        'Edificio Alpha',
+        'Compra de cimento',
+        'Materiais',
+        'Despesa',
+        5000.00,
+        '15/01/2026',
+        'Transferencia',
+        'Pago',
+        'NF-123',
+        'Pagamento a vista',
+    ]
+    exemplo2 = [
+        'Edificio Alpha',
+        'Receita de vendas',
+        'Vendas',
+        'Receita',
+        15000.00,
+        '20/01/2026',
+        'Boleto',
+        'Pago',
+        '',
+        'Parcela 1',
+    ]
+    exemplo3 = [
+        'Residencial Parque',
+        'Mao de obra',
+        'Servicos',
+        'Despesa',
+        3500.00,
+        '10/01/2026',
+        'PIX',
+        'Pago',
+        '',
+        'Pedreiro',
+    ]
 
     ws.append(exemplo1)
     ws.append(exemplo2)
@@ -326,8 +378,7 @@ def gerar_modelo_excel():
         column = col[0].column_letter
         for cell in col:
             try:
-                if len(str(cell.value)) > max_length:
-                    max_length = len(str(cell.value))
+                max_length = max(max_length, len(str(cell.value)))
             except:
                 pass
         adjusted_width = min(max_length + 2, 50)
@@ -350,13 +401,11 @@ def importar_obras_excel(file_stream, filename):
     Retorna:
         tuple: (obras_list, erros_list)
     """
-    obras = []
-    erros = []
 
     if filename.lower().endswith('.xlsx'):
         return _importar_obras_xlsx(file_stream)
     else:
-        raise ExcelImportError("Formato nao suportado para obras. Use .xlsx")
+        raise ExcelImportError('Formato nao suportado para obras. Use .xlsx')
 
 
 def _importar_obras_xlsx(file_stream):
@@ -370,16 +419,28 @@ def _importar_obras_xlsx(file_stream):
 
         # Detecta cabecalhos
         headers = {}
-        header_row = list(ws.iter_rows(min_row=1, max_row=1, values_only=True))[0]
+        header_row = next(iter(ws.iter_rows(min_row=1, max_row=1, values_only=True)))
 
         header_map = {
             'nome': ['nome', 'nome da obra', 'obra', 'nome obra', 'titulo'],
             'cliente': ['cliente', 'nome cliente', 'cliente nome', 'proprietario'],
             'endereco': ['endereco', 'end', 'local', 'localizacao', 'rua'],
             'status': ['status', 'situacao', 'estado', 'fase'],
-            'orcamento_previsto': ['orcamento', 'orcamento previsto', 'valor', 'valor previsto', 'custo'],
+            'orcamento_previsto': [
+                'orcamento',
+                'orcamento previsto',
+                'valor',
+                'valor previsto',
+                'custo',
+            ],
             'data_inicio': ['data inicio', 'inicio', 'data de inicio', 'start'],
-            'data_fim_prevista': ['data fim', 'fim', 'data fim prevista', 'previsao', 'data prevista'],
+            'data_fim_prevista': [
+                'data fim',
+                'fim',
+                'data fim prevista',
+                'previsao',
+                'data prevista',
+            ],
             'progresso': ['progresso', 'percentual', 'andamento', '%'],
             'responsavel': ['responsavel', 'engenheiro', 'gestor', 'responsavel tecnico'],
             'descricao': ['descricao', 'desc', 'detalhes', 'observacoes'],
@@ -398,7 +459,7 @@ def _importar_obras_xlsx(file_stream):
         required = ['nome']
         missing = [r for r in required if r not in headers]
         if missing:
-            raise ExcelImportError(f"Colunas obrigatorias nao encontradas: {', '.join(missing)}")
+            raise ExcelImportError(f'Colunas obrigatorias nao encontradas: {", ".join(missing)}')
 
         # Processa linhas
         for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
@@ -411,16 +472,17 @@ def _importar_obras_xlsx(file_stream):
                 if obra:
                     obras.append(obra)
             except Exception as e:
-                erros.append(f"Linha {row_idx}: {str(e)}")
+                erros.append(f'Linha {row_idx}: {e!s}')
 
     except Exception as e:
-        raise ExcelImportError(f"Erro ao ler arquivo Excel: {str(e)}")
+        raise ExcelImportError(f'Erro ao ler arquivo Excel: {e!s}') from e
 
     return obras, erros
 
 
 def _parse_obra_row(row_tuple, headers, line_num):
     """Parse de uma linha de obra do Excel"""
+
     def get_val(key, default=''):
         if key not in headers:
             return default
@@ -433,7 +495,7 @@ def _parse_obra_row(row_tuple, headers, line_num):
     # Campo obrigatorio
     nome = get_val('nome')
     if not nome or str(nome).strip() == '':
-        raise ValueError("Nome da obra e obrigatorio")
+        raise ValueError('Nome da obra e obrigatorio')
 
     # Valida status
     status = str(get_val('status', 'Planejamento')).strip()
@@ -444,10 +506,8 @@ def _parse_obra_row(row_tuple, headers, line_num):
     # Parse valores
     orcamento = parse_float(get_val('orcamento_previsto', 0))
     progresso = int(parse_float(get_val('progresso', 0)))
-    if progresso < 0:
-        progresso = 0
-    if progresso > 100:
-        progresso = 100
+    progresso = max(progresso, 0)
+    progresso = min(progresso, 100)
 
     # Parse datas
     data_inicio = parse_date(get_val('data_inicio'))

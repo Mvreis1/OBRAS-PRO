@@ -14,6 +14,7 @@ echo "-> Executando migrations..."
 flask db upgrade
 
 # Verificar se migrations foram aplicadas
+# shellcheck disable=SC2181
 if [ $? -eq 0 ]; then
     echo "-> Migrations aplicadas com sucesso!"
 else

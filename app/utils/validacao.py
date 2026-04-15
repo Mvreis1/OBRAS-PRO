@@ -1,8 +1,8 @@
 """
 Helpers para validações comuns
 """
+
 import re
-from app.models import db
 
 
 def validate_email(email):
@@ -16,14 +16,14 @@ def validate_email(email):
 def validate_password(password):
     """Valida força da senha: mínimo 8 caracteres, 1 letra e 1 número"""
     if not password:
-        return False, "Senha é obrigatória."
+        return False, 'Senha é obrigatória.'
     if len(password) < 8:
-        return False, "A senha deve ter pelo menos 8 caracteres."
+        return False, 'A senha deve ter pelo menos 8 caracteres.'
     if not re.search(r'[A-Za-z]', password):
-        return False, "A senha deve conter pelo menos uma letra."
+        return False, 'A senha deve conter pelo menos uma letra.'
     if not re.search(r'[0-9]', password):
-        return False, "A senha deve conter pelo menos um número."
-    return True, ""
+        return False, 'A senha deve conter pelo menos um número.'
+    return True, ''
 
 
 def validate_cnpj_format(cnpj):
@@ -37,6 +37,7 @@ def validate_cnpj_format(cnpj):
 def get_empresa_ativa(empresa_id):
     """Busca empresa ativa pelo ID"""
     from app.models import Empresa
+
     return Empresa.query.filter_by(id=empresa_id, ativo=True).first()
 
 
@@ -49,16 +50,14 @@ def verificar_empresa_ativa(empresa_id):
 def get_usuario_ativo(usuario_id, empresa_id):
     """Busca usuário ativo de uma empresa"""
     from app.models import Usuario
-    return Usuario.query.filter_by(
-        id=usuario_id, 
-        empresa_id=empresa_id, 
-        ativo=True
-    ).first()
+
+    return Usuario.query.filter_by(id=usuario_id, empresa_id=empresa_id, ativo=True).first()
 
 
 def get_obra_ativa(obra_id, empresa_id):
     """Busca obra ativa de uma empresa"""
     from app.models import Obra
+
     return Obra.query.filter_by(id=obra_id, empresa_id=empresa_id).first()
 
 
@@ -72,7 +71,7 @@ def validar_cpf(cpf):
     if cpf == cpf[0] * 11:
         return False
     for i in range(9):
-        if cpf[i] != cpf[i+1]:
+        if cpf[i] != cpf[i + 1]:
             break
     else:
         return False

@@ -2,16 +2,18 @@
 Helper para exportacao de dados para Excel (.xlsx)
 Usa openpyxl para gerar arquivos Excel reais com formatacao profissional
 """
+
+from datetime import date, datetime
 from io import BytesIO
-from datetime import datetime, date
+
 from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
 
 class EstiloExcel:
     """Centraliza todos os estilos de formatacao do Excel"""
-    
+
     # Cores do tema
     CORES = {
         'header': '6366F1',
@@ -24,7 +26,7 @@ class EstiloExcel:
         'alt_row': 'F8FAFC',
         'border': 'E2E8F0',
     }
-    
+
     # Formatos de numero
     FORMATOS = {
         'currency': '#,##0.00',
@@ -39,7 +41,11 @@ class EstiloExcel:
 
     @classmethod
     def header_fill(cls):
-        return PatternFill(start_color=f'FF{cls.CORES["header"]}', end_color=f'FF{cls.CORES["header"]}', fill_type='solid')
+        return PatternFill(
+            start_color=f'FF{cls.CORES["header"]}',
+            end_color=f'FF{cls.CORES["header"]}',
+            fill_type='solid',
+        )
 
     @classmethod
     def header_align(cls):
@@ -51,7 +57,11 @@ class EstiloExcel:
 
     @classmethod
     def subheader_fill(cls):
-        return PatternFill(start_color=f'FF{cls.CORES["subheader"]}', end_color=f'FF{cls.CORES["subheader"]}', fill_type='solid')
+        return PatternFill(
+            start_color=f'FF{cls.CORES["subheader"]}',
+            end_color=f'FF{cls.CORES["subheader"]}',
+            fill_type='solid',
+        )
 
     @classmethod
     def data_font(cls, bold=False, color=None):
@@ -60,7 +70,11 @@ class EstiloExcel:
 
     @classmethod
     def alt_fill(cls):
-        return PatternFill(start_color=f'FF{cls.CORES["alt_row"]}', end_color=f'FF{cls.CORES["alt_row"]}', fill_type='solid')
+        return PatternFill(
+            start_color=f'FF{cls.CORES["alt_row"]}',
+            end_color=f'FF{cls.CORES["alt_row"]}',
+            fill_type='solid',
+        )
 
     @classmethod
     def thin_border(cls):
@@ -103,7 +117,7 @@ class ExcelExport:
             dados: Lista de listas com os dados de cada linha
         """
         ws = self.wb.create_sheet(title=nome[:31])
-        
+
         estilo = EstiloExcel()
         border = estilo.thin_border()
         alt_fill = estilo.alt_fill()
@@ -127,7 +141,7 @@ class ExcelExport:
                 tipo = cabecalhos[col_idx - 1][1] if col_idx <= len(cabecalhos) else 'text'
 
                 # Aplicar valor baseado no tipo
-                if valor is None or valor == '' or valor == '-':
+                if valor is None or valor in {'', '-'}:
                     cell.value = ''
                     cell.font = estilo.data_font()
                 elif tipo == 'currency' and isinstance(valor, (int, float)):
@@ -135,9 +149,13 @@ class ExcelExport:
                     cell.number_format = estilo.FORMATOS['currency']
                     # Cor condicional
                     if valor < 0:
-                        cell.font = estilo.data_font(bold=True, color=f'FF{estilo.CORES["negative"]}')
+                        cell.font = estilo.data_font(
+                            bold=True, color=f'FF{estilo.CORES["negative"]}'
+                        )
                     elif valor > 0:
-                        cell.font = estilo.data_font(bold=True, color=f'FF{estilo.CORES["positive"]}')
+                        cell.font = estilo.data_font(
+                            bold=True, color=f'FF{estilo.CORES["positive"]}'
+                        )
                     else:
                         cell.font = estilo.data_font()
                 elif tipo == 'number' and isinstance(valor, (int, float)):
@@ -178,7 +196,7 @@ class ExcelExport:
 
         for i, (label, valor) in enumerate(resumo.items()):
             row = last_row + i
-            
+
             cell_label = ws.cell(row=row, column=1, value=label)
             cell_label.font = estilo.subheader_font()
             cell_label.fill = estilo.subheader_fill()
@@ -202,12 +220,13 @@ class ExcelExport:
     def to_response(self, filename):
         """Retorna response Flask para download"""
         from flask import make_response
+
         return make_response(
             self.to_bytes(),
             headers={
                 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'Content-Disposition': f'attachment; filename={filename}'
-            }
+                'Content-Disposition': f'attachment; filename={filename}',
+            },
         )
 
     def _ajustar_largura_colunas(self, ws, cabecalhos):
@@ -238,3 +257,7 @@ def format_date_br(value):
     if hasattr(value, 'strftime'):
         return value.strftime('%d/%m/%Y')
     return str(value)
+
+
+def formatar_moeda():
+    return None

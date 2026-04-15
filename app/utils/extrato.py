@@ -1,25 +1,28 @@
 """
 Helpers para importação de extrato bancário
 """
+
 import re
 from datetime import date
-from app.models import db, ContaBancaria, LancamentoConta
+
+from app.models import ContaBancaria, LancamentoConta, db
 
 
 def recalcular_saldo_conta(conta_id, empresa_id):
     """Recalcula o saldo atual de uma conta baseado em todos os lançamentos"""
-    result = db.session.query(
-        db.func.sum(
-            db.case(
-                (LancamentoConta.tipo == 'Credito', LancamentoConta.valor),
-                else_=-LancamentoConta.valor
-            )
-        ).label('saldo')
-    ).filter(
-        LancamentoConta.conta_id == conta_id,
-        LancamentoConta.empresa_id == empresa_id
-    ).scalar()
-    
+    result = (
+        db.session.query(
+            db.func.sum(
+                db.case(
+                    (LancamentoConta.tipo == 'Credito', LancamentoConta.valor),
+                    else_=-LancamentoConta.valor,
+                )
+            ).label('saldo')
+        )
+        .filter(LancamentoConta.conta_id == conta_id, LancamentoConta.empresa_id == empresa_id)
+        .scalar()
+    )
+
     conta = db.session.get(ContaBancaria, conta_id)
     if conta:
         conta.saldo_atual = conta.saldo_inicial + (result or 0)
@@ -37,18 +40,18 @@ def processar_ofx(conteudo, empresa_id, conta_id):
     for transacao in transacoes:
         try:
             # Extrair campos do OFX (formato XML-like)
-            def get_tag(tag, default=''):
-                match = re.search(rf'<{tag}>([^<\n]+)', transacao)
+            def get_tag(tag, text, default=''):
+                match = re.search(rf'<{tag}>([^<\n]+)', text)
                 return match.group(1).strip() if match else default
 
-            data_str = get_tag('DTPOSTED', '')
+            data_str = get_tag('DTPOSTED', transacao, '')
             if data_str:
                 data = date.fromisoformat(data_str[:8].replace('/', '-'))
             else:
                 data = date.today()
 
-            descricao = get_tag('NAME', get_tag('MEMO', 'Transação OFX'))
-            valor_str = get_tag('TRNAMT', '0').replace(',', '.')
+            descricao = get_tag('NAME', transacao, get_tag('MEMO', transacao, 'Transação OFX'))
+            valor_str = get_tag('TRNAMT', transacao, '0').replace(',', '.')
             valor = float(valor_str)
 
             if valor > 0:
@@ -64,12 +67,12 @@ def processar_ofx(conteudo, empresa_id, conta_id):
                 tipo=tipo,
                 valor=valor,
                 data=data,
-                documento=get_tag('REFNUM', '')
+                documento=get_tag('REFNUM', transacao, ''),
             )
             db.session.add(lancamento)
             lancamentos.append(lancamento)
         except Exception as e:
-            erros.append(f"Erro ao processar transação OFX: {str(e)}")
+            erros.append(f'Erro ao processar transação OFX: {e!s}')
 
     recalcular_saldo_conta(conta_id, empresa_id)
     return len(lancamentos), erros
@@ -79,7 +82,7 @@ def processar_csv(conteudo, empresa_id, conta_id):
     """Processa arquivo CSV (formato genérico)"""
     import csv
     import io
-    
+
     lancamentos = []
     erros = []
 
@@ -99,6 +102,7 @@ def processar_csv(conteudo, empresa_id, conta_id):
 
             if '/' in data_str:
                 from datetime import datetime
+
                 data = datetime.strptime(data_str, '%d/%m/%Y').date()
             else:
                 data = date.today()
@@ -120,12 +124,12 @@ def processar_csv(conteudo, empresa_id, conta_id):
                 tipo=tipo,
                 valor=valor,
                 data=data,
-                documento=documento
+                documento=documento,
             )
             db.session.add(lancamento)
             lancamentos.append(lancamento)
         except Exception as e:
-            erros.append(f"Linha {i+1}: {str(e)}")
+            erros.append(f'Linha {i + 1}: {e!s}')
 
     recalcular_saldo_conta(conta_id, empresa_id)
     return len(lancamentos), erros
@@ -147,7 +151,7 @@ def processar_cnab(conteudo, empresa_id, conta_id):
         if tipo_reg == '3':
             try:
                 data_str = linha[110:118]
-                hora_str = linha[118:122]
+                linha[118:122]
 
                 if data_str.isdigit():
                     dia = int(data_str[0:2])
@@ -180,12 +184,12 @@ def processar_cnab(conteudo, empresa_id, conta_id):
                         tipo=tipo,
                         valor=valor,
                         data=data,
-                        documento=documento
+                        documento=documento,
                     )
                     db.session.add(lancamento)
                     lancamentos.append(lancamento)
             except Exception as e:
-                erros.append(f"Linha {i+1}: {str(e)}")
+                erros.append(f'Linha {i + 1}: {e!s}')
 
     recalcular_saldo_conta(conta_id, empresa_id)
     return len(lancamentos), erros

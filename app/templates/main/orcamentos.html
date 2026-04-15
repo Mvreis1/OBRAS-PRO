@@ -17,23 +17,40 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-body">
-                    <div class="d-flex gap-2">
-                        <a href="{{ url_for('orcamentos.orcamentos') }}" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-outline{% endif %}">
-                            Todos
-                        </a>
-                        <a href="{{ url_for('orcamentos.orcamentos', status='Rascunho') }}" class="btn btn-sm {% if status_filter == 'Rascunho' %}btn-primary{% else %}btn-outline{% endif %}">
-                            Rascunho
-                        </a>
-                        <a href="{{ url_for('orcamentos.orcamentos', status='Enviado') }}" class="btn btn-sm {% if status_filter == 'Enviado' %}btn-primary{% else %}btn-outline{% endif %}">
-                            Enviado
-                        </a>
-                        <a href="{{ url_for('orcamentos.orcamentos', status='Aprovado') }}" class="btn btn-sm {% if status_filter == 'Aprovado' %}btn-primary{% else %}btn-outline{% endif %}">
-                            Aprovado
-                        </a>
-                        <a href="{{ url_for('orcamentos.orcamentos', status='Reprovado') }}" class="btn btn-sm {% if status_filter == 'Reprovado' %}btn-primary{% else %}btn-outline{% endif %}">
-                            Reprovado
-                        </a>
-                    </div>
+                    <form method="GET" action="{{ url_for('orcamentos.orcamentos') }}" class="row g-3 align-items-center">
+                        <div class="col-md-4">
+                            <input type="text" name="busca" class="form-control" placeholder="Buscar por título ou cliente..." value="{{ busca or '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex gap-2">
+                                <a href="{{ url_for('orcamentos.orcamentos', busca=busca) }}" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-outline{% endif %}">
+                                    Todos
+                                </a>
+                                <a href="{{ url_for('orcamentos.orcamentos', status='Rascunho', busca=busca) }}" class="btn btn-sm {% if status_filter == 'Rascunho' %}btn-primary{% else %}btn-outline{% endif %}">
+                                    Rascunho
+                                </a>
+                                <a href="{{ url_for('orcamentos.orcamentos', status='Enviado', busca=busca) }}" class="btn btn-sm {% if status_filter == 'Enviado' %}btn-primary{% else %}btn-outline{% endif %}">
+                                    Enviado
+                                </a>
+                                <a href="{{ url_for('orcamentos.orcamentos', status='Aprovado', busca=busca) }}" class="btn btn-sm {% if status_filter == 'Aprovado' %}btn-primary{% else %}btn-outline{% endif %}">
+                                    Aprovado
+                                </a>
+                                <a href="{{ url_for('orcamentos.orcamentos', status='Reprovado', busca=busca) }}" class="btn btn-sm {% if status_filter == 'Reprovado' %}btn-primary{% else %}btn-outline{% endif %}">
+                                    Reprovado
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div style="display: flex; gap: 5px;">
+                                <button type="submit" class="btn btn-outline" style="flex: 1;">
+                                    <i class="bi bi-funnel"></i>
+                                </button>
+                                <a href="{{ url_for('orcamentos.orcamentos') }}" class="btn btn-outline" style="flex: 1;">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

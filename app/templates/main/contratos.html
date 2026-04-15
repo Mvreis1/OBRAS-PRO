@@ -14,20 +14,37 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-body">
-                    <div class="d-flex gap-2">
-                        <a href="{{ url_for('contratos.contratos') }}" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-outline{% endif %}">
-                            Todos
-                        </a>
-                        <a href="{{ url_for('contratos.contratos', status='Rascunho') }}" class="btn btn-sm {% if status_filter == 'Rascunho' %}btn-primary{% else %}btn-outline{% endif %}">
-                            Rascunho
-                        </a>
-                        <a href="{{ url_for('contratos.contratos', status='Ativo') }}" class="btn btn-sm {% if status_filter == 'Ativo' %}btn-primary{% else %}btn-outline{% endif %}">
-                            Ativo
-                        </a>
-                        <a href="{{ url_for('contratos.contratos', status='Encerrado') }}" class="btn btn-sm {% if status_filter == 'Encerrado' %}btn-primary{% else %}btn-outline{% endif %}">
-                            Encerrado
-                        </a>
-                    </div>
+                    <form method="GET" action="{{ url_for('contratos.contratos') }}" class="row g-3 align-items-center">
+                        <div class="col-md-4">
+                            <input type="text" name="busca" class="form-control" placeholder="Buscar por título ou cliente..." value="{{ busca or '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex gap-2">
+                                <a href="{{ url_for('contratos.contratos', busca=busca) }}" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-outline{% endif %}">
+                                    Todos
+                                </a>
+                                <a href="{{ url_for('contratos.contratos', status='Rascunho', busca=busca) }}" class="btn btn-sm {% if status_filter == 'Rascunho' %}btn-primary{% else %}btn-outline{% endif %}">
+                                    Rascunho
+                                </a>
+                                <a href="{{ url_for('contratos.contratos', status='Ativo', busca=busca) }}" class="btn btn-sm {% if status_filter == 'Ativo' %}btn-primary{% else %}btn-outline{% endif %}">
+                                    Ativo
+                                </a>
+                                <a href="{{ url_for('contratos.contratos', status='Encerrado', busca=busca) }}" class="btn btn-sm {% if status_filter == 'Encerrado' %}btn-primary{% else %}btn-outline{% endif %}">
+                                    Encerrado
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div style="display: flex; gap: 5px;">
+                                <button type="submit" class="btn btn-outline" style="flex: 1;">
+                                    <i class="bi bi-funnel"></i>
+                                </button>
+                                <a href="{{ url_for('contratos.contratos') }}" class="btn btn-outline" style="flex: 1;">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

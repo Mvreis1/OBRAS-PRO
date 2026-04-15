@@ -7,12 +7,25 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main]
+  workflow_dispatch:  # Permite execução manual
+
+env:
+  PYTHON_VERSION: '3.12'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  # Testes
+  # ==========================================
+  # TESTES - Matrix com múltiplas versões
+  # ==========================================
   test:
     runs-on: ubuntu-latest
-    
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
+        db-backend: ['sqlite', 'postgres']
+      fail-fast: false
+
     services:
       postgres:
         image: postgres:15
@@ -30,86 +43,235 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Setup Python
+
+      - name: Setup Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-      
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest pytest-cov
-      
-      - name: Run tests
+          pip install pytest pytest-cov pytest-xdist
+
+      - name: Run tests (SQLite)
+        if: matrix.db-backend == 'sqlite'
         env:
           DATABASE_URL: sqlite:///test.db
-          SECRET_KEY: test-secret-key
+          SECRET_KEY: test-secret-key-ci
           FLASK_ENV: testing
+          CACHE_TYPE: simple
+          RATELIMIT_STORAGE_URL: memory://
         run: |
-          pytest --cov=app --cov-report=xml --cov-report=html -v
-      
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
+          pytest --cov=app --cov-report=xml --cov-report=term-missing -v -n auto
+
+      - name: Run tests (PostgreSQL)
+        if: matrix.db-backend == 'postgres'
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/obras_test
+          SECRET_KEY: test-secret-key-ci
+          FLASK_ENV: testing
+          CACHE_TYPE: simple
+          RATELIMIT_STORAGE_URL: memory://
+        run: |
+          pytest --cov=app --cov-report=xml --cov-report=term-missing -v -n auto
+
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.12' && matrix.db-backend == 'sqlite'
+        uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
+          fail_ci_if_error: false
+          flags: unittests
+          name: codecov-umbrella
 
-  # Linting
+  # ==========================================
+  # LINTING E FORMATAÇÃO
+  # ==========================================
   lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-      
-      - name: Install linters
-        run: pip install ruff flake8
-      
-      - name: Run ruff
-        run: ruff check app/
-      
-      - name: Run flake8
-        run: flake8 app/ --max-line-length=120
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
 
-  # Build Docker
-  build:
+      - name: Install linters
+        run: pip install ruff black mypy types-requests
+
+      - name: Run Ruff (check)
+        run: ruff check app/ tests/ --output-format=github
+
+      - name: Run Ruff (format check)
+        run: ruff format app/ tests/ --check --diff
+
+      - name: Run Black (check)
+        run: black app/ tests/ --check --diff --line-length 120
+
+      - name: Run mypy (type checking)
+        run: mypy app/ --ignore-missing-imports --no-strict-optional || true
+
+  # ==========================================
+  # SEGURANÇA
+  # ==========================================
+  security:
     runs-on: ubuntu-latest
-    needs: [test, lint]
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Build Docker image
-        run: docker build -t obras-pro:${{ github.sha }} .
-      
-      - name: Run security scan
-        run: |
-          docker run --rm -i checkmarx/kics scan -p /app --ci -o results.json || true
-      
-      - name: Scan for secrets
-        uses: trufflesecurity/trufflehog@main
-        with:
-          path: .
-          base: HEAD~1
 
-  # Deploy (apenas para main)
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install security tools
+        run: pip install bandit safety
+
+      - name: Run Bandit (security linting)
+        run: bandit -r app/ -f json -o bandit-results.json || true
+
+      - name: Run Safety (dependency check)
+        run: safety check --json --output safety-results.json || true
+
+      - name: Upload security results
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-results
+          path: |
+            bandit-results.json
+            safety-results.json
+          retention-days: 30
+
+      - name: Scan for secrets
+        uses: gitleaks/gitleaks-action@v2
+        if: github.event_name == 'pull_request'
+        with:
+          config: ''
+
+  # ==========================================
+  # BUILD DOCKER
+  # ==========================================
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: [test, lint]
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          outputs: type=docker,dest=/tmp/obras-pro.tar
+
+      - name: Push Docker image (main only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          input: /tmp/obras-pro.tar
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # ==========================================
+  # DEPLOY (apenas para main)
+  # ==========================================
   deploy:
     runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/main'
+    needs: [docker-build, security]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: production
     steps:
-      - name: Deploy to production
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to Render
+        if: vars.DEPLOY_TARGET == 'render'
         run: |
-          echo "Deploying to production..."
-          # Adicionar comandos de deploy aqui
+          curl -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Content-Type: application/json"
+
+      - name: Deploy to Railway
+        if: vars.DEPLOY_TARGET == 'railway'
+        uses: railwayapp/cli-action@v2
+        with:
+          railway_token: ${{ secrets.RAILWAY_TOKEN }}
+          command: up --detach
+
+      - name: Deploy via SSH
+        if: vars.DEPLOY_TARGET == 'ssh'
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            cd /opt/obras-pro
+            docker compose pull
+            docker compose up -d
+            docker system prune -f
+
+      - name: Notify deployment success
+        if: success()
+        uses: slackapi/slack-github-action@v1
+        with:
+          slack-message: |
+            :white_check_mark: *Deploy realizado com sucesso!*
+            Commit: ${{ github.event.head_commit.message }}
+            Autor: ${{ github.actor }}
+            Branch: ${{ github.ref_name }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}

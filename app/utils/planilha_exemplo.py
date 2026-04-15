@@ -1,12 +1,14 @@
 """
 Gerador de planilha de exemplo com 20 obras para importação
 """
-from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-from openpyxl.utils import get_column_letter
-from io import BytesIO
-from datetime import date, timedelta
+
 import random
+from datetime import date, timedelta
+from io import BytesIO
+
+from openpyxl import Workbook
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+from openpyxl.utils import get_column_letter
 
 
 def gerar_planilha_obras_exemplo():
@@ -16,7 +18,7 @@ def gerar_planilha_obras_exemplo():
     """
     wb = Workbook()
     ws = wb.active
-    ws.title = "Obras Exemplo"
+    ws.title = 'Obras Exemplo'
 
     # Estilos
     header_font = Font(name='Calibri', size=11, bold=True, color='FFFFFF')
@@ -40,7 +42,7 @@ def gerar_planilha_obras_exemplo():
         'Data Fim Prevista',
         'Progresso (%)',
         'Responsável',
-        'Descrição'
+        'Descrição',
     ]
 
     for col_idx, titulo in enumerate(cabecalhos, 1):
@@ -62,7 +64,7 @@ def gerar_planilha_obras_exemplo():
             'dias_fim': 90,
             'progresso': 65,
             'responsavel': 'Eng. Carlos Mendes',
-            'descricao': 'Construção de condomínio residencial com 12 unidades'
+            'descricao': 'Construção de condomínio residencial com 12 unidades',
         },
         {
             'nome': 'Centro Comercial Plaza',
@@ -74,7 +76,7 @@ def gerar_planilha_obras_exemplo():
             'dias_fim': 365,
             'progresso': 10,
             'responsavel': 'Eng. Maria Santos',
-            'descricao': 'Centro comercial com 20 lojas e estacionamento'
+            'descricao': 'Centro comercial com 20 lojas e estacionamento',
         },
         {
             'nome': 'Escola Municipal Prof. Lima',
@@ -86,7 +88,7 @@ def gerar_planilha_obras_exemplo():
             'dias_fim': 180,
             'progresso': 40,
             'responsavel': 'Eng. Pedro Oliveira',
-            'descricao': 'Reforma e ampliação da escola municipal'
+            'descricao': 'Reforma e ampliação da escola municipal',
         },
         {
             'nome': 'Hospital Regional Norte',
@@ -98,7 +100,7 @@ def gerar_planilha_obras_exemplo():
             'dias_fim': 730,
             'progresso': 5,
             'responsavel': 'Eng. Ana Costa',
-            'descricao': 'Construção de hospital regional com 100 leitos'
+            'descricao': 'Construção de hospital regional com 100 leitos',
         },
         {
             'nome': 'Galpão Industrial Logística',
@@ -110,7 +112,7 @@ def gerar_planilha_obras_exemplo():
             'dias_fim': -30,
             'progresso': 100,
             'responsavel': 'Eng. Roberto Lima',
-            'descricao': 'Galpão de 2000m² para armazenagem e distribuição'
+            'descricao': 'Galpão de 2000m² para armazenagem e distribuição',
         },
         {
             'nome': 'Edifício Corporate Tower',
@@ -122,7 +124,7 @@ def gerar_planilha_obras_exemplo():
             'dias_fim': 240,
             'progresso': 50,
             'responsavel': 'Eng. Fernanda Souza',
-            'descricao': 'Edifício comercial de 30 andares com escritórios'
+            'descricao': 'Edifício comercial de 30 andares com escritórios',
         },
         {
             'nome': 'Residencial Parque Verde',
@@ -134,7 +136,7 @@ def gerar_planilha_obras_exemplo():
             'dias_fim': 120,
             'progresso': 30,
             'responsavel': 'Eng. Marcos Pereira',
-            'descricao': 'Conjunto residencial com 8 casas geminadas'
+            'descricao': 'Conjunto residencial com 8 casas geminadas',
         },
         {
             'nome': 'Shopping Center Metropolitano',
@@ -146,7 +148,7 @@ def gerar_planilha_obras_exemplo():
             'dias_fim': 1095,
             'progresso': 0,
             'responsavel': 'Eng. Juliana Martins',
-            'descricao': 'Shopping center com 150 lojas e 4 cinemas'
+            'descricao': 'Shopping center com 150 lojas e 4 cinemas',
         },
         {
             'nome': 'Estação de Tratamento de Água',
@@ -158,7 +160,7 @@ def gerar_planilha_obras_exemplo():
             'dias_fim': 60,
             'progresso': 80,
             'responsavel': 'Eng. Ricardo Almeida',
-            'descricao': 'ETA com capacidade de 500m³/hora'
+            'descricao': 'ETA com capacidade de 500m³/hora',
         },
         {
             'nome': 'Hotel Resort Tropical',
@@ -170,7 +172,7 @@ def gerar_planilha_obras_exemplo():
             'dias_fim': -60,
             'progresso': 100,
             'responsavel': 'Eng. Camila Ferreira',
-            'descricao': 'Hotel resort com 200 quartos e área de lazer'
+            'descricao': 'Hotel resort com 200 quartos e área de lazer',
         },
         {
             'nome': 'Fábrica de Componentes Eletrônicos',
@@ -182,7 +184,7 @@ def gerar_planilha_obras_exemplo():
             'dias_fim': 210,
             'progresso': 45,
             'responsavel': 'Eng. Bruno Carvalho',
-            'descricao': 'Unidade fabril de 5000m² com linha de montagem'
+            'descricao': 'Unidade fabril de 5000m² com linha de montagem',
         },
         {
             'nome': 'Centro de Convenções Municipal',
@@ -194,7 +196,7 @@ def gerar_planilha_obras_exemplo():
             'dias_fim': 540,
             'progresso': 8,
             'responsavel': 'Eng. Patricia Lima',
-            'descricao': 'Centro de convenções com capacidade para 5000 pessoas'
+            'descricao': 'Centro de convenções com capacidade para 5000 pessoas',
         },
         {
             'nome': 'Condomínio Horizontal Solar',
@@ -206,7 +208,7 @@ def gerar_planilha_obras_exemplo():
             'dias_fim': 150,
             'progresso': 55,
             'responsavel': 'Eng. Gustavo Henrique',
-            'descricao': 'Condomínio com 20 casas e área comum'
+            'descricao': 'Condomínio com 20 casas e área comum',
         },
         {
             'nome': 'Terminal Rodoviário Urbano',
@@ -218,7 +220,7 @@ def gerar_planilha_obras_exemplo():
             'dias_fim': -45,
             'progresso': 100,
             'responsavel': 'Eng. Luciana Torres',
-            'descricao': 'Terminal com 15 plataformas e estacionamento'
+            'descricao': 'Terminal com 15 plataformas e estacionamento',
         },
         {
             'nome': 'Indústria de Alimentos Frescos',
@@ -230,7 +232,7 @@ def gerar_planilha_obras_exemplo():
             'dias_fim': 120,
             'progresso': 70,
             'responsavel': 'Eng. Daniel Moreira',
-            'descricao': 'Unidade industrial de processamento de alimentos'
+            'descricao': 'Unidade industrial de processamento de alimentos',
         },
         {
             'nome': 'Complexo Esportivo Municipal',
@@ -242,7 +244,7 @@ def gerar_planilha_obras_exemplo():
             'dias_fim': 180,
             'progresso': 35,
             'responsavel': 'Eng. Sandra Melo',
-            'descricao': 'Complexo com ginásio, piscina e campos'
+            'descricao': 'Complexo com ginásio, piscina e campos',
         },
         {
             'nome': 'Torre de Escritórios Business',
@@ -254,7 +256,7 @@ def gerar_planilha_obras_exemplo():
             'dias_fim': 900,
             'progresso': 2,
             'responsavel': 'Eng. Alexandre Costa',
-            'descricao': 'Torre corporativa de 40 andares certificada LEED'
+            'descricao': 'Torre corporativa de 40 andares certificada LEED',
         },
         {
             'nome': 'Residencial Jardim das Acácias',
@@ -266,7 +268,7 @@ def gerar_planilha_obras_exemplo():
             'dias_fim': 200,
             'progresso': 35,
             'responsavel': 'Eng. Bianca Andrade',
-            'descricao': 'Edifício residencial com 24 apartamentos'
+            'descricao': 'Edifício residencial com 24 apartamentos',
         },
         {
             'nome': 'Aeroporto Regional Executivo',
@@ -278,7 +280,7 @@ def gerar_planilha_obras_exemplo():
             'dias_fim': -90,
             'progresso': 100,
             'responsavel': 'Eng. Felipe Rocha',
-            'descricao': 'Aeroporto com pista de 2000m e terminal'
+            'descricao': 'Aeroporto com pista de 2000m e terminal',
         },
         {
             'nome': 'Usina Solar Fotovoltaica',
@@ -290,8 +292,8 @@ def gerar_planilha_obras_exemplo():
             'dias_fim': 365,
             'progresso': 40,
             'responsavel': 'Eng. Carolina Dias',
-            'descricao': 'Usina solar com capacidade de 50MW'
-        }
+            'descricao': 'Usina solar com capacidade de 50MW',
+        },
     ]
 
     # Preencher dados
@@ -347,7 +349,7 @@ def gerar_planilha_lancamentos_exemplo():
     """
     wb = Workbook()
     ws = wb.active
-    ws.title = "Lançamentos Exemplo"
+    ws.title = 'Lançamentos Exemplo'
 
     # Estilos
     header_font = Font(name='Calibri', size=11, bold=True, color='FFFFFF')
@@ -355,7 +357,15 @@ def gerar_planilha_lancamentos_exemplo():
     header_align = Alignment(horizontal='center', vertical='center')
 
     # Cabeçalhos
-    cabecalhos = ['Obra', 'Descrição', 'Categoria', 'Tipo', 'Valor (R$)', 'Data', 'Status Pagamento']
+    cabecalhos = [
+        'Obra',
+        'Descrição',
+        'Categoria',
+        'Tipo',
+        'Valor (R$)',
+        'Data',
+        'Status Pagamento',
+    ]
     for col_idx, titulo in enumerate(cabecalhos, 1):
         cell = ws.cell(row=1, column=col_idx, value=titulo)
         cell.font = header_font
@@ -363,18 +373,38 @@ def gerar_planilha_lancamentos_exemplo():
         cell.alignment = header_align
 
     # Dados de exemplo - lançamentos para as obras
-    categorias_despesa = ['Material', 'Mão de Obra', 'Equipamento', 'Serviço Terceiro', 'Imposto', 'Outros']
+    categorias_despesa = [
+        'Material',
+        'Mão de Obra',
+        'Equipamento',
+        'Serviço Terceiro',
+        'Imposto',
+        'Outros',
+    ]
     categorias_receita = ['Venda', 'Prestação de Serviço', 'Outros']
     status_list = ['Pago', 'Pendente', 'Pago']
 
     obras_nomes = [
-        'Residencial Villa Nova', 'Centro Comercial Plaza', 'Escola Municipal Prof. Lima',
-        'Hospital Regional Norte', 'Galpão Industrial Logística', 'Edifício Corporate Tower',
-        'Residencial Parque Verde', 'Shopping Center Metropolitano', 'Estação de Tratamento de Água',
-        'Hotel Resort Tropical', 'Fábrica de Componentes Eletrônicos', 'Centro de Convenções Municipal',
-        'Condomínio Horizontal Solar', 'Terminal Rodoviário Urbano', 'Indústria de Alimentos Frescos',
-        'Complexo Esportivo Municipal', 'Torre de Escritórios Business', 'Residencial Jardim das Acácias',
-        'Aeroporto Regional Executivo', 'Usina Solar Fotovoltaica'
+        'Residencial Villa Nova',
+        'Centro Comercial Plaza',
+        'Escola Municipal Prof. Lima',
+        'Hospital Regional Norte',
+        'Galpão Industrial Logística',
+        'Edifício Corporate Tower',
+        'Residencial Parque Verde',
+        'Shopping Center Metropolitano',
+        'Estação de Tratamento de Água',
+        'Hotel Resort Tropical',
+        'Fábrica de Componentes Eletrônicos',
+        'Centro de Convenções Municipal',
+        'Condomínio Horizontal Solar',
+        'Terminal Rodoviário Urbano',
+        'Indústria de Alimentos Frescos',
+        'Complexo Esportivo Municipal',
+        'Torre de Escritórios Business',
+        'Residencial Jardim das Acácias',
+        'Aeroporto Regional Executivo',
+        'Usina Solar Fotovoltaica',
     ]
 
     hoje = date.today()
@@ -386,7 +416,11 @@ def gerar_planilha_lancamentos_exemplo():
         num_despesas = random.randint(3, 5)
         for _ in range(num_despesas):
             ws.cell(row=row, column=1, value=obra_nome)
-            ws.cell(row=row, column=2, value=f"{random.choice(['Compra', 'Pagamento', 'Serviço'])} - {random.choice(['fase 1', 'fase 2', 'parcial'])}")
+            ws.cell(
+                row=row,
+                column=2,
+                value=f'{random.choice(["Compra", "Pagamento", "Serviço"])} - {random.choice(["fase 1", "fase 2", "parcial"])}',
+            )
             ws.cell(row=row, column=3, value=random.choice(categorias_despesa))
             ws.cell(row=row, column=4, value='Despesa')
             ws.cell(row=row, column=5, value=round(random.uniform(5000, 150000), 2))
@@ -398,7 +432,11 @@ def gerar_planilha_lancamentos_exemplo():
         num_receitas = random.randint(1, 2)
         for _ in range(num_receitas):
             ws.cell(row=row, column=1, value=obra_nome)
-            ws.cell(row=row, column=2, value=f"{random.choice(['Recebimento', 'Entrada', 'Pagamento cliente'])}")
+            ws.cell(
+                row=row,
+                column=2,
+                value=f'{random.choice(["Recebimento", "Entrada", "Pagamento cliente"])}',
+            )
             ws.cell(row=row, column=3, value=random.choice(categorias_receita))
             ws.cell(row=row, column=4, value='Receita')
             ws.cell(row=row, column=5, value=round(random.uniform(10000, 300000), 2))

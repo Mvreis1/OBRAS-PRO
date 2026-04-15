@@ -1,19 +1,22 @@
 """
 Helpers para parsing de datas
 """
-from datetime import datetime, date
+
+from datetime import date, datetime
+
 
 # Constantes de formato padronizadas
 class FormatoData:
     """Constantes de formato de data"""
+
     # ISO (para APIs/JSON/banco)
     ISO = '%Y-%m-%d'
     ISO_DATETIME = '%Y-%m-%d %H:%M:%S'
-    
+
     # Brasileiro (para UI/exibição)
     BR = '%d/%m/%Y'
     BR_DATETIME = '%d/%m/%Y %H:%M'
-    
+
     # Curto
     BR_SHORT = '%d/%m/%y'
 
@@ -78,11 +81,12 @@ def get_date_range(periodo, referencia=None):
     """Retorna início e fim de um período"""
     if referencia is None:
         referencia = date.today()
-    
+
     if periodo == 'hoje':
         return referencia, referencia
     elif periodo == 'semana':
         from datetime import timedelta
+
         inicio = referencia - timedelta(days=referencia.weekday())
         return inicio, referencia
     elif periodo == 'mes':

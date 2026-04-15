@@ -14,12 +14,27 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-body">
-                    <div class="d-flex gap-2">
-                        <a href="{{ url_for('fornecedores.fornecedores') }}" class="btn btn-sm {% if not categoria %}btn-primary{% else %}btn-outline{% endif %}">
+                    <form method="GET" action="{{ url_for('fornecedores.fornecedores') }}" class="row g-3 align-items-center mb-3">
+                        <div class="col-md-4">
+                            <input type="text" name="busca" class="form-control" placeholder="Buscar por nome, CNPJ ou CPF..." value="{{ busca or '' }}">
+                        </div>
+                        <div class="col-md-2">
+                            <div style="display: flex; gap: 5px;">
+                                <button type="submit" class="btn btn-outline" style="flex: 1;">
+                                    <i class="bi bi-funnel"></i>
+                                </button>
+                                <a href="{{ url_for('fornecedores.fornecedores') }}" class="btn btn-outline" style="flex: 1;">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="{{ url_for('fornecedores.fornecedores', busca=busca) }}" class="btn btn-sm {% if not categoria %}btn-primary{% else %}btn-outline{% endif %}">
                             Todos
                         </a>
                         {% for cat in categorias %}
-                        <a href="{{ url_for('fornecedores.fornecedores', categoria=cat[0]) }}" class="btn btn-sm {% if categoria == cat[0] %}btn-primary{% else %}btn-outline{% endif %}">
+                        <a href="{{ url_for('fornecedores.fornecedores', categoria=cat[0], busca=busca) }}" class="btn btn-sm {% if categoria == cat[0] %}btn-primary{% else %}btn-outline{% endif %}">
                             {{ cat[0] }} ({{ cat[1] }})
                         </a>
                         {% endfor %}

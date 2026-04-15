@@ -1,13 +1,14 @@
 """
 Rotas de notificações e alertas
 """
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
-from datetime import datetime, date
-from app.models import db, Empresa, Usuario, Obra, Lancamento, Notificacao, ConfigEmail
+
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
+
+from app.models import ConfigEmail, Notificacao, db
 from app.routes.auth import login_required
 
 # Importar helpers otimizados
-from app.utils.notificacoes import gerar_alertas as _gerar_alertas, send_email
+from app.utils.notificacoes import gerar_alertas as _gerar_alertas
 
 notif_bp = Blueprint('notificacoes', __name__)
 
@@ -21,22 +22,20 @@ def notificacoes():
     per_page = request.args.get('per_page', 20, type=int)
 
     from app.utils.paginacao import Paginacao
+
     paginacao = Paginacao(
         Notificacao.query.filter_by(empresa_id=empresa_id).order_by(Notificacao.created_at.desc()),
         page=page,
-        per_page=per_page
+        per_page=per_page,
     )
 
-    nao_lidas = Notificacao.query.filter_by(
-        empresa_id=empresa_id,
-        lida=False
-    ).count()
+    nao_lidas = Notificacao.query.filter_by(empresa_id=empresa_id, lida=False).count()
 
     return render_template(
         'main/notificacoes.html',
         notificacoes=paginacao.items,
         paginacao=paginacao,
-        nao_lidas=nao_lidas
+        nao_lidas=nao_lidas,
     )
 
 
@@ -67,14 +66,14 @@ def marcar_todas_lida():
 def config_email():
     """Configurações de email para alertas"""
     empresa_id = session.get('empresa_id')
-    
+
     config = ConfigEmail.query.filter_by(empresa_id=empresa_id).first()
-    
+
     if request.method == 'POST':
         if not config:
             config = ConfigEmail(empresa_id=empresa_id)
             db.session.add(config)
-        
+
         config.smtp_host = request.form.get('smtp_host')
         config.smtp_port = int(request.form.get('smtp_port') or 587)
         config.smtp_user = request.form.get('smtp_user')
@@ -82,19 +81,20 @@ def config_email():
         config.smtp_usar_tls = request.form.get('smtp_usar_tls') == 'on'
         config.email_destino = request.form.get('email_destino')
         config.alertas_ativos = request.form.get('alertas_ativos') == 'on'
-        
+
         db.session.commit()
-        
+
         if request.form.get('testar_email'):
             from app.utils.notificacoes import send_email
+
             if send_email(config, 'Teste - OBRAS PRO', 'Email de teste enviado com sucesso!'):
                 flash('Email de teste enviado com sucesso!', 'success')
             else:
                 flash('Erro ao enviar email de teste. Verifique as configurações.', 'danger')
-        
+
         flash('Configurações salvas!', 'success')
         return redirect(url_for('notificacoes.config_email'))
-    
+
     return render_template('main/config_email.html', config=config)
 
 
@@ -103,10 +103,7 @@ def config_email():
 def api_nao_lidas():
     """API para verificar notificações não lidas"""
     empresa_id = session.get('empresa_id')
-    count = Notificacao.query.filter_by(
-        empresa_id=empresa_id,
-        lida=False
-    ).count()
+    count = Notificacao.query.filter_by(empresa_id=empresa_id, lida=False).count()
     return jsonify({'count': count})
 
 

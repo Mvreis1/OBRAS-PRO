@@ -1,6 +1,7 @@
 """
 Helpers para sanitização de inputs
 """
+
 import re
 from datetime import datetime
 
@@ -9,16 +10,16 @@ def sanitize_string(value, max_length=None, allow_html=False):
     """Sanitiza string de input"""
     if value is None:
         return None
-    
+
     value = str(value).strip()
-    
+
     if not allow_html:
         # Remover tags HTML
         value = re.sub(r'<[^>]+>', '', value)
-    
+
     if max_length:
         value = value[:max_length]
-    
+
     return value
 
 
