@@ -6,9 +6,27 @@
 
 {% block topbar_actions %}
 <div style="display: flex; gap: 10px;">
-    <a href="{{ url_for('excel.exportar_obras_excel') }}" class="btn btn-success">
-        <i class="bi bi-file-earmark-excel me-2"></i>Exportar Excel
-    </a>
+    <div class="dropdown">
+        <button class="btn btn-outline dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            <i class="bi bi-file-earmark-spreadsheet me-2"></i>Excel
+        </button>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ url_for('excel.importar_obras') }}">
+                <i class="bi bi-upload me-2"></i>Importar Obras
+            </a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{{ url_for('excel.baixar_planilha_obras_exemplo') }}">
+                <i class="bi bi-file-earmark-excel me-2"></i>Exemplo: 20 Obras
+            </a></li>
+            <li><a class="dropdown-item" href="{{ url_for('excel.baixar_planilha_lancamentos_exemplo') }}">
+                <i class="bi bi-file-earmark-excel me-2"></i>Exemplo: Lançamentos
+            </a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{{ url_for('excel.exportar_obras_excel') }}">
+                <i class="bi bi-download me-2"></i>Exportar Minhas Obras
+            </a></li>
+        </ul>
+    </div>
     <a href="{{ url_for('main.nova_obra') }}" class="btn btn-primary">
         <i class="bi bi-plus-lg me-2"></i>Nova Obra
     </a>

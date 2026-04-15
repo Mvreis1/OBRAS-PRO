@@ -7,7 +7,7 @@ from app.routes.auth import login_required
 from app.models import db, Obra, Lancamento
 from app.constants import StatusObra
 from app.utils.excel_export import ExcelExport
-from app.utils.excel_import import importar_lancamentos_excel, gerar_modelo_excel, ExcelImportError
+from app.utils.excel_import import importar_lancamentos_excel, importar_obras_excel, gerar_modelo_excel, ExcelImportError
 
 excel_bp = Blueprint('excel', __name__)
 
@@ -406,3 +406,116 @@ def baixar_modelo():
     response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     response.headers['Content-Disposition'] = 'attachment; filename=modelo_lancamentos.xlsx'
     return response
+
+
+@excel_bp.route('/obras/planilha-exemplo')
+@login_required
+def baixar_planilha_obras_exemplo():
+    """Baixa planilha de exemplo com 20 obras para demonstração"""
+    from app.utils.planilha_exemplo import gerar_planilha_obras_exemplo
+
+    excel_data = gerar_planilha_obras_exemplo()
+
+    response = make_response(excel_data)
+    response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    response.headers['Content-Disposition'] = 'attachment; filename=obras_exemplo_20_obras.xlsx'
+    return response
+
+
+@excel_bp.route('/lancamentos/planilha-exemplo')
+@login_required
+def baixar_planilha_lancamentos_exemplo():
+    """Baixa planilha de exemplo com lançamentos para as 20 obras"""
+    from app.utils.planilha_exemplo import gerar_planilha_lancamentos_exemplo
+
+    excel_data = gerar_planilha_lancamentos_exemplo()
+
+    response = make_response(excel_data)
+    response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    response.headers['Content-Disposition'] = 'attachment; filename=lancamentos_exemplo.xlsx'
+    return response
+
+
+@excel_bp.route('/obras/importar', methods=['GET', 'POST'])
+@login_required
+def importar_obras():
+    """Importa obras de arquivo Excel"""
+    empresa_id = session.get('empresa_id')
+
+    if request.method == 'POST':
+        if 'arquivo' not in request.files:
+            flash('Nenhum arquivo enviado', 'danger')
+            return redirect(url_for('excel.importar_obras'))
+
+        file = request.files['arquivo']
+        if file.filename == '':
+            flash('Nenhum arquivo selecionado', 'danger')
+            return redirect(url_for('excel.importar_obras'))
+
+        # Validar extensao
+        if not file.filename.lower().endswith('.xlsx'):
+            flash('Formato nao suportado. Use .xlsx', 'danger')
+            return redirect(url_for('excel.importar_obras'))
+
+        try:
+            # Processa o arquivo
+            obras_data, erros = importar_obras_excel(file, file.filename)
+
+            if not obras_data and erros:
+                for erro in erros[:10]:
+                    flash(erro, 'warning')
+                return redirect(url_for('excel.importar_obras'))
+
+            # Importa para o banco
+            importadas = 0
+            duplicadas = 0
+
+            for data in obras_data:
+                # Verifica duplicado (mesmo nome)
+                existente = Obra.query.filter_by(
+                    empresa_id=empresa_id,
+                    nome=data['nome']
+                ).first()
+
+                if existente:
+                    duplicadas += 1
+                    continue
+
+                # Cria obra
+                obra = Obra(
+                    empresa_id=empresa_id,
+                    nome=data['nome'],
+                    cliente=data.get('cliente'),
+                    endereco=data.get('endereco'),
+                    status=data.get('status', 'Planejamento'),
+                    orcamento_previsto=data.get('orcamento_previsto', 0),
+                    data_inicio=data.get('data_inicio'),
+                    data_fim_prevista=data.get('data_fim_prevista'),
+                    progresso=data.get('progresso', 0),
+                    responsavel=data.get('responsavel'),
+                    descricao=data.get('descricao')
+                )
+                db.session.add(obra)
+                importadas += 1
+
+            db.session.commit()
+
+            # Mensagens de resultado
+            if importadas > 0:
+                flash(f'{importadas} obra(s) importada(s) com sucesso!', 'success')
+            if duplicadas > 0:
+                flash(f'{duplicadas} obra(s) ignorada(s) por serem duplicadas', 'warning')
+            if erros:
+                for erro in erros[:5]:
+                    flash(erro, 'warning')
+
+            return redirect(url_for('main.obras'))
+
+        except ExcelImportError as e:
+            flash(f'Erro na importacao: {str(e)}', 'danger')
+            return redirect(url_for('excel.importar_obras'))
+        except Exception as e:
+            flash(f'Erro inesperado: {str(e)}', 'danger')
+            return redirect(url_for('excel.importar_obras'))
+
+    return render_template('excel/importar_obras.html')

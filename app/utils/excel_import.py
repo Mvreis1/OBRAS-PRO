@@ -341,3 +341,127 @@ def gerar_modelo_excel():
     wb.save(buffer)
     buffer.seek(0)
     return buffer.getvalue()
+
+
+def importar_obras_excel(file_stream, filename):
+    """
+    Importa obras de arquivo Excel.
+
+    Retorna:
+        tuple: (obras_list, erros_list)
+    """
+    obras = []
+    erros = []
+
+    if filename.lower().endswith('.xlsx'):
+        return _importar_obras_xlsx(file_stream)
+    else:
+        raise ExcelImportError("Formato nao suportado para obras. Use .xlsx")
+
+
+def _importar_obras_xlsx(file_stream):
+    """Importa obras de Excel (.xlsx)"""
+    obras = []
+    erros = []
+
+    try:
+        wb = load_workbook(file_stream, data_only=True)
+        ws = wb.active
+
+        # Detecta cabecalhos
+        headers = {}
+        header_row = list(ws.iter_rows(min_row=1, max_row=1, values_only=True))[0]
+
+        header_map = {
+            'nome': ['nome', 'nome da obra', 'obra', 'nome obra', 'titulo'],
+            'cliente': ['cliente', 'nome cliente', 'cliente nome', 'proprietario'],
+            'endereco': ['endereco', 'end', 'local', 'localizacao', 'rua'],
+            'status': ['status', 'situacao', 'estado', 'fase'],
+            'orcamento_previsto': ['orcamento', 'orcamento previsto', 'valor', 'valor previsto', 'custo'],
+            'data_inicio': ['data inicio', 'inicio', 'data de inicio', 'start'],
+            'data_fim_prevista': ['data fim', 'fim', 'data fim prevista', 'previsao', 'data prevista'],
+            'progresso': ['progresso', 'percentual', 'andamento', '%'],
+            'responsavel': ['responsavel', 'engenheiro', 'gestor', 'responsavel tecnico'],
+            'descricao': ['descricao', 'desc', 'detalhes', 'observacoes'],
+        }
+
+        for col_idx, header in enumerate(header_row, start=1):
+            if not header:
+                continue
+            header_lower = str(header).lower().strip()
+            for key, variants in header_map.items():
+                if header_lower in variants:
+                    headers[key] = col_idx - 1
+                    break
+
+        # Verifica campos obrigatorios
+        required = ['nome']
+        missing = [r for r in required if r not in headers]
+        if missing:
+            raise ExcelImportError(f"Colunas obrigatorias nao encontradas: {', '.join(missing)}")
+
+        # Processa linhas
+        for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+            try:
+                # Pula linhas vazias
+                if not row or all(v is None or str(v).strip() == '' for v in row):
+                    continue
+
+                obra = _parse_obra_row(row, headers, row_idx)
+                if obra:
+                    obras.append(obra)
+            except Exception as e:
+                erros.append(f"Linha {row_idx}: {str(e)}")
+
+    except Exception as e:
+        raise ExcelImportError(f"Erro ao ler arquivo Excel: {str(e)}")
+
+    return obras, erros
+
+
+def _parse_obra_row(row_tuple, headers, line_num):
+    """Parse de uma linha de obra do Excel"""
+    def get_val(key, default=''):
+        if key not in headers:
+            return default
+        idx = headers[key]
+        if idx < len(row_tuple):
+            val = row_tuple[idx]
+            return val if val is not None else default
+        return default
+
+    # Campo obrigatorio
+    nome = get_val('nome')
+    if not nome or str(nome).strip() == '':
+        raise ValueError("Nome da obra e obrigatorio")
+
+    # Valida status
+    status = str(get_val('status', 'Planejamento')).strip()
+    status_validos = ['Planejamento', 'Em Execução', 'Paralisada', 'Concluída', 'Entregue']
+    if status not in status_validos:
+        status = 'Planejamento'
+
+    # Parse valores
+    orcamento = parse_float(get_val('orcamento_previsto', 0))
+    progresso = int(parse_float(get_val('progresso', 0)))
+    if progresso < 0:
+        progresso = 0
+    if progresso > 100:
+        progresso = 100
+
+    # Parse datas
+    data_inicio = parse_date(get_val('data_inicio'))
+    data_fim = parse_date(get_val('data_fim_prevista'))
+
+    return {
+        'nome': str(nome).strip(),
+        'cliente': str(get_val('cliente', '')).strip(),
+        'endereco': str(get_val('endereco', '')).strip(),
+        'status': status,
+        'orcamento_previsto': orcamento,
+        'data_inicio': data_inicio,
+        'data_fim_prevista': data_fim,
+        'progresso': progresso,
+        'responsavel': str(get_val('responsavel', '')).strip(),
+        'descricao': str(get_val('descricao', '')).strip(),
+    }

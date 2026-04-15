@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Importar Obras - {{ nome_sistema }}{% endblock %}
+{% block page_title %}Importar Obras{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('main.obras') }}" class="btn btn-outline">
+    <i class="bi bi-arrow-left me-2"></i>Voltar
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="bi bi-upload me-2"></i>Importar Obras do Excel</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="mb-4">
+                        <label class="form-label">Arquivo Excel (.xlsx)</label>
+                        <input type="file" name="arquivo" class="form-control" accept=".xlsx" required>
+                        <div class="form-text">
+                            Selecione um arquivo Excel com as colunas: Nome, Cliente, Endereço, Status,
+                            Orçamento, Data Início, Data Fim, Progresso, Responsável, Descrição
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-upload me-2"></i>Importar Obras
+                        </button>
+                        <a href="{{ url_for('main.obras') }}" class="btn btn-outline">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title"><i class="bi bi-info-circle me-2"></i>Instruções</h5>
+            </div>
+            <div class="card-body">
+                <h6>Colunas obrigatórias:</h6>
+                <ul class="list-unstyled small text-muted">
+                    <li><strong>Nome</strong> - Nome da obra (obrigatório)</li>
+                </ul>
+
+                <h6>Colunas opcionais:</h6>
+                <ul class="list-unstyled small text-muted">
+                    <li><strong>Cliente</strong> - Nome do cliente</li>
+                    <li><strong>Endereço</strong> - Local da obra</li>
+                    <li><strong>Status</strong> - Planejamento, Em Execução, Paralisada, Concluída, Entregue</li>
+                    <li><strong>Orçamento</strong> - Valor previsto (R$)</li>
+                    <li><strong>Data Início</strong> - Data de início</li>
+                    <li><strong>Data Fim</strong> - Previsão de término</li>
+                    <li><strong>Progresso</strong> - Percentual de 0 a 100</li>
+                    <li><strong>Responsável</strong> - Engenheiro responsável</li>
+                    <li><strong>Descrição</strong> - Detalhes da obra</li>
+                </ul>
+
+                <hr>
+
+                <h6>Download de exemplo:</h6>
+                <a href="{{ url_for('excel.baixar_planilha_obras_exemplo') }}" class="btn btn-sm btn-success w-100">
+                    <i class="bi bi-download me-2"></i>Baixar 20 Obras de Exemplo
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
