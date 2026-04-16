@@ -219,15 +219,12 @@ class ExcelExport:
 
     def to_response(self, filename):
         """Retorna response Flask para download"""
-        from flask import make_response
+        from flask import Response
 
-        return make_response(
-            self.to_bytes(),
-            headers={
-                'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'Content-Disposition': f'attachment; filename={filename}',
-            },
-        )
+        response = Response(self.to_bytes())
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+        return response
 
     def _ajustar_largura_colunas(self, ws, cabecalhos):
         """Ajusta automaticamente a largura das colunas"""

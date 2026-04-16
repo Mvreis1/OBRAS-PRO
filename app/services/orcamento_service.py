@@ -25,10 +25,11 @@ class OrcamentoService:
             # Create budget
             orcamento = Orcamento(
                 empresa_id=empresa_id,
-                obra_id=dados.get('obra_id'),
+                cliente=dados.get('cliente', 'Cliente sem nome'),
+                titulo=dados.get('titulo') or dados.get('descricao') or 'Orçamento sem título',
                 descricao=dados.get('descricao'),
-                status=dados.get('status') or 'Aberto',
-                data_validade=data_validade,
+                status=dados.get('status') or 'Rascunho',
+                validade=data_validade,
                 observacoes=dados.get('observacoes'),
             )
             db.session.add(orcamento)
@@ -67,7 +68,7 @@ class OrcamentoService:
 
     @staticmethod
     def calcular_valor_total(orcamento):
-        """Calculate and update budget total from items. Returns total value"""
+        """Calculate budget total from items. Returns total value"""
         total = (
             db.session.query(db.func.sum(ItemOrcamento.quantidade * ItemOrcamento.valor_unitario))
             .filter(ItemOrcamento.orcamento_id == orcamento.id)
@@ -75,7 +76,6 @@ class OrcamentoService:
             or 0
         )
 
-        orcamento.valor_total = total
         return total
 
     @staticmethod
@@ -88,11 +88,17 @@ class OrcamentoService:
         # Create copy
         novo_orcamento = Orcamento(
             empresa_id=empresa_id,
-            obra_id=orcamento.obra_id,
-            descricao=f'{orcamento.descricao} (Cópia)',
-            status='Aberto',
-            data_validade=orcamento.data_validade,
+            cliente=orcamento.cliente,
+            titulo=f'Cópia de {orcamento.titulo}',
+            descricao=orcamento.descricao,
+            status='Rascunho',
+            validade=orcamento.validade,
             observacoes=orcamento.observacoes,
+            valor_materiais=orcamento.valor_materiais,
+            valor_mao_obra=orcamento.valor_mao_obra,
+            valor_equipamentos=orcamento.valor_equipamentos,
+            valor_outros=orcamento.valor_outros,
+            desconto=orcamento.desconto,
         )
         db.session.add(novo_orcamento)
         db.session.flush()
@@ -124,7 +130,7 @@ class OrcamentoService:
         if not orcamento:
             return None, 'Orçamento não encontrado.'
 
-        if orcamento.obra_id is None:
+        if orcamento is None or orcamento.obra_id is None:
             return None, 'Orçamento precisa estar vinculado a uma obra.'
 
         contrato = Contrato(

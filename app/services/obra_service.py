@@ -35,6 +35,10 @@ class ObraService(BaseService):
 
         data_inicio = parse_date(dados.get('data_inicio'))
         data_fim_prevista = parse_date(dados.get('data_fim_prevista'))
+        
+        # Validate required date
+        if dados.get('data_inicio') and not data_inicio:
+            return None, 'Data de início inválida.'
 
         # Validate budget
         orcamento_previsto = dados.get('orcamento_previsto', 0)

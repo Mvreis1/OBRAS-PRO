@@ -97,10 +97,17 @@ class TestLancamentoCRUD:
         """Editar lançamento existente"""
         empresa_id = admin_user.empresa_id
 
+        # Cria obra primeiro
+        obra = Obra(empresa_id=empresa_id, nome='Obra Editar', status='Em Execução')
+        db.session.add(obra)
+        db.session.commit()
+
         # Cria lançamento
         lanc = Lancamento(
             empresa_id=empresa_id,
+            obra_id=obra.id,
             descricao='Lançamento Original',
+            categoria='Geral',
             tipo='Despesa',
             valor=1000.00,
             data=date(2026, 4, 1),
@@ -133,9 +140,16 @@ class TestLancamentoCRUD:
         """Excluir lançamento"""
         empresa_id = admin_user.empresa_id
 
+        # Cria obra primeiro
+        obra = Obra(empresa_id=empresa_id, nome='Obra Excluir', status='Em Execução')
+        db.session.add(obra)
+        db.session.commit()
+
         lanc = Lancamento(
             empresa_id=empresa_id,
+            obra_id=obra.id,
             descricao='Para Excluir',
+            categoria='Geral',
             tipo='Despesa',
             valor=500.00,
             data=date(2026, 4, 1),
@@ -165,6 +179,11 @@ class TestLancamentoFiltros:
         """Cria lançamentos de exemplo para testes de filtro"""
         empresa_id = admin_user.empresa_id
 
+        # Cria uma obra para vincular os lançamentos
+        obra = Obra(empresa_id=empresa_id, nome='Obra Filtros', status='Em Execução')
+        db.session.add(obra)
+        db.session.commit()
+
         dados = [
             ('Receita', 'Vendas', 10000, '2026-01-15'),
             ('Despesa', 'Materiais', 5000, '2026-02-10'),
@@ -177,6 +196,7 @@ class TestLancamentoFiltros:
         for tipo, cat, valor, data_str in dados:
             lanc = Lancamento(
                 empresa_id=empresa_id,
+                obra_id=obra.id,
                 descricao=f'{tipo} {cat}',
                 categoria=cat,
                 tipo=tipo,
@@ -229,19 +249,28 @@ class TestDashboard:
         """Dashboard com lançamentos mostra dados corretos"""
         empresa_id = admin_user.empresa_id
 
+        # Cria obra primeiro
+        obra = Obra(empresa_id=empresa_id, nome='Obra Dashboard', status='Em Execução')
+        db.session.add(obra)
+        db.session.commit()
+
         # Cria lançamentos
         db.session.add_all(
             [
                 Lancamento(
                     empresa_id=empresa_id,
+                    obra_id=obra.id,
                     descricao='Receita 1',
+                    categoria='Vendas',
                     tipo='Receita',
                     valor=50000,
                     data=date.today(),
                 ),
                 Lancamento(
                     empresa_id=empresa_id,
+                    obra_id=obra.id,
                     descricao='Despesa 1',
+                    categoria='Materiais',
                     tipo='Despesa',
                     valor=30000,
                     data=date.today(),
@@ -257,16 +286,27 @@ class TestDashboard:
         """API do dashboard retorna JSON correto"""
         empresa_id = admin_user.empresa_id
 
+        # Cria obra primeiro
+        obra = Obra(empresa_id=empresa_id, nome='Obra API', status='Em Execução')
+        db.session.add(obra)
+        db.session.commit()
+
         db.session.add_all(
             [
                 Lancamento(
                     empresa_id=empresa_id,
+                    obra_id=obra.id,
+                    descricao='Receita API',
+                    categoria='Vendas',
                     tipo='Receita',
                     valor=10000,
                     data=date.today(),
                 ),
                 Lancamento(
                     empresa_id=empresa_id,
+                    obra_id=obra.id,
+                    descricao='Despesa API',
+                    categoria='Materiais',
                     tipo='Despesa',
                     valor=5000,
                     data=date.today(),
@@ -315,6 +355,7 @@ class TestRelatorios:
                     empresa_id=empresa_id,
                     obra_id=obra.id,
                     descricao='Receita Obra',
+                    categoria='Vendas',
                     tipo='Receita',
                     valor=100000,
                     data=date(2026, 4, 1),
@@ -323,6 +364,7 @@ class TestRelatorios:
                     empresa_id=empresa_id,
                     obra_id=obra.id,
                     descricao='Despesa Obra',
+                    categoria='Materiais',
                     tipo='Despesa',
                     valor=60000,
                     data=date(2026, 4, 5),
@@ -450,13 +492,18 @@ class TestCalculosFinanceiros:
         """Calcula saldo atual corretamente"""
         empresa_id = admin_user.empresa_id
 
+        # Cria obra primeiro
+        obra = Obra(empresa_id=empresa_id, nome='Obra Saldo', status='Em Execução')
+        db.session.add(obra)
+        db.session.commit()
+
         db.session.add_all(
             [
-                Lancamento(empresa_id=empresa_id, tipo='Receita', valor=80000, data=date(2026, 4, 1)),
+                Lancamento(empresa_id=empresa_id, obra_id=obra.id, descricao='Receita 1', categoria='Vendas', tipo='Receita', valor=80000, data=date(2026, 4, 1)),
                 Lancamento(
-                    empresa_id=empresa_id, tipo='Despesa', valor=45000, data=date(2026, 4, 5)
+                    empresa_id=empresa_id, obra_id=obra.id, descricao='Despesa 1', categoria='Materiais', tipo='Despesa', valor=45000, data=date(2026, 4, 5)
                 ),
-                Lancamento(empresa_id=empresa_id, tipo='Receita', valor=20000, data=date(2026, 4, 10)),
+                Lancamento(empresa_id=empresa_id, obra_id=obra.id, descricao='Receita 2', categoria='Vendas', tipo='Receita', valor=20000, data=date(2026, 4, 10)),
             ]
         )
         db.session.commit()
@@ -470,10 +517,17 @@ class TestCalculosFinanceiros:
         """Agregação de despesas por categoria"""
         empresa_id = admin_user.empresa_id
 
+        # Cria obra primeiro
+        obra = Obra(empresa_id=empresa_id, nome='Obra Categorias', status='Em Execução')
+        db.session.add(obra)
+        db.session.commit()
+
         db.session.add_all(
             [
                 Lancamento(
                     empresa_id=empresa_id,
+                    obra_id=obra.id,
+                    descricao='Despesa materiais',
                     tipo='Despesa',
                     categoria='Materiais',
                     valor=10000,
@@ -481,13 +535,17 @@ class TestCalculosFinanceiros:
                 ),
                 Lancamento(
                     empresa_id=empresa_id,
+                    obra_id=obra.id,
+                    descricao='Despesa mão de obra',
                     tipo='Despesa',
-                    categoria='Materiais',
+                    categoria='Mão de obra',
                     valor=15000,
                     data=date(2026, 4, 5),
                 ),
                 Lancamento(
                     empresa_id=empresa_id,
+                    obra_id=obra.id,
+                    descricao='Despesa equipamentos',
                     tipo='Despesa',
                     categoria='Mão de obra',
                     valor=20000,
@@ -504,18 +562,29 @@ class TestCalculosFinanceiros:
         """Evolução mensal de receitas e despesas"""
         empresa_id = admin_user.empresa_id
 
+        # Cria obra primeiro
+        obra = Obra(empresa_id=empresa_id, nome='Obra Evolução', status='Em Execução')
+        db.session.add(obra)
+        db.session.commit()
+
         # Cria lançamentos em meses diferentes
         for mes in range(1, 5):
             db.session.add_all(
                 [
                     Lancamento(
                         empresa_id=empresa_id,
+                        obra_id=obra.id,
+                        descricao=f'Receita mês {mes}',
+                        categoria='Vendas',
                         tipo='Receita',
                         valor=10000 * mes,
                         data=date(2026, mes, 15),
                     ),
                     Lancamento(
                         empresa_id=empresa_id,
+                        obra_id=obra.id,
+                        descricao=f'Despesa mês {mes}',
+                        categoria='Materiais',
                         tipo='Despesa',
                         valor=5000 * mes,
                         data=date(2026, mes, 20),
@@ -543,6 +612,8 @@ class TestExportacao:
             Lancamento(
                 empresa_id=empresa_id,
                 obra_id=obra.id,
+                descricao='Despesa exportar',
+                categoria='Materiais',
                 tipo='Despesa',
                 valor=5000,
                 data=date(2026, 4, 1),

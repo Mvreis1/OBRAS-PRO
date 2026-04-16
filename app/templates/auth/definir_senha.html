@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Definir Nova Senha</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="senha" class="form-label">Nova Senha</label>
+                            <input type="password" class="form-control" id="senha" name="senha" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmar" class="form-label">Confirmar Senha</label>
+                            <input type="password" class="form-control" id="confirmar" name="confirmar" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Definir Senha</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
