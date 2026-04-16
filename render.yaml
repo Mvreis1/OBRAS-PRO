@@ -22,6 +22,20 @@ services:
         value: simple
       - key: PYTHONUNBUFFERED
         value: "1"
+      # AWS S3 / Cloud Storage (OPCIONAL mas RECOMENDADO)
+      # Configure para uploads persistentes entre deploys
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_S3_BUCKET
+        sync: false
+      - key: AWS_S3_REGION
+        value: us-east-1
+      - key: AWS_S3_ENDPOINT_URL
+        sync: false
+      - key: AWS_S3_URL
+        sync: false
     healthCheckPath: /healthz
     autoDeploy: true
     numInstances: 1

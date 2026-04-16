@@ -91,6 +91,20 @@ PERMANENT_SESSION_LIFETIME = config('SESSION_LIFETIME', default=86400, cast=int)
 MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB
 UPLOAD_ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx', 'xls', 'xlsx'}
 
+# AWS S3 / Cloud Storage para uploads persistentes
+# Configure estas variáveis para usar S3, Cloudflare R2, ou compatível
+AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')
+AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
+AWS_S3_BUCKET = config('AWS_S3_BUCKET', default='')
+AWS_S3_REGION = config('AWS_S3_REGION', default='us-east-1')
+AWS_S3_ENDPOINT_URL = config('AWS_S3_ENDPOINT_URL', default='')  # Para R2 ou MinIO
+AWS_S3_URL = config('AWS_S3_URL', default='')  # URL pública do bucket (CloudFront, etc)
+
+# Se S3 não configurado, usa storage local (fallback)
+USE_S3_STORAGE = config('USE_S3_STORAGE', default=False, cast=bool)
+if AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY and AWS_S3_BUCKET:
+    USE_S3_STORAGE = True
+
 # Rate Limiting
 FLASK_ENV = config('FLASK_ENV', default='development')
 CACHE_TYPE = config('CACHE_TYPE', default='simple')

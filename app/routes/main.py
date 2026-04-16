@@ -23,6 +23,7 @@ from app.routes.auth import login_required
 from app.services.audit_service import AuditService
 from app.services.obra_alerta_service import ObraAlertaService
 from app.services.relatorio_service import RelatorioService
+from app.services.storage_service import StorageService
 from app.utils.excel_export import ExcelExport
 from app.utils.sanitize import sanitize_float, sanitize_int
 
@@ -276,10 +277,6 @@ def upload_imagem_obra(obra_id):
         return redirect(url_for('main.obra_detalhe', obra_id=obra_id))
 
     if arquivo:
-        import os
-
-        from werkzeug.utils import secure_filename
-
         # Verificar extensão permitida
         extensoes_permitidas = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
         extensao = arquivo.filename.rsplit('.', 1)[1].lower() if '.' in arquivo.filename else ''
@@ -291,39 +288,54 @@ def upload_imagem_obra(obra_id):
         try:
             # Remover imagem anterior se existir
             if obra.imagem:
-                try:
-                    caminho_antigo = os.path.join('app', obra.imagem.lstrip('/'))
-                    if os.path.exists(caminho_antigo):
-                        os.remove(caminho_antigo)
-                except Exception as e:
-                    print(f'Erro ao remover imagem antiga: {e}')
+                if obra.imagem.startswith('http'):
+                    # Imagem no S3
+                    StorageService.delete_file(obra.imagem)
+                else:
+                    # Imagem local
+                    StorageService.delete_local_file(obra.imagem)
 
-            # Criar diretório de uploads se não existir
-            upload_dir = os.path.join('app', 'static', 'uploads', 'obras')
-            os.makedirs(upload_dir, exist_ok=True)
+            # Tentar upload para S3 primeiro
+            if current_app.config.get('USE_S3_STORAGE'):
+                timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+                filename = f'obra_{obra_id}_{timestamp}.{extensao}'
+                
+                url_imagem, error = StorageService.upload_file(
+                    arquivo,
+                    folder='obras',
+                    filename=filename
+                )
 
-            # Gerar nome seguro e único para o arquivo
-            filename = secure_filename(arquivo.filename)
-            _nome_base, extensao = os.path.splitext(filename)
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            novo_filename = f'obra_{obra_id}_{timestamp}{extensao}'
+                if error:
+                    flash(f'Erro no upload: {error}', 'danger')
+                    return redirect(url_for('main.obra_detalhe', obra_id=obra_id))
 
-            # Salvar o arquivo
-            caminho_arquivo = os.path.join(upload_dir, novo_filename)
-            arquivo.save(caminho_arquivo)
+                # Salvar URL no banco
+                obra.imagem = url_imagem
+                db.session.commit()
+                flash('Imagem atualizada com sucesso (cloud storage)!', 'success')
+            else:
+                # Fallback: storage local
+                timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+                filename = f'obra_{obra_id}_{timestamp}.{extensao}'
+                
+                relative_url, error = StorageService.save_local_file(
+                    arquivo,
+                    folder='obras',
+                    filename=filename
+                )
 
-            # Verificar se o arquivo foi salvo
-            if os.path.exists(caminho_arquivo):
-                # Atualizar o caminho no banco de dados (caminho relativo para static)
-                obra.imagem = f'/static/uploads/obras/{novo_filename}'
+                if error:
+                    flash(f'Erro ao salvar: {error}', 'danger')
+                    return redirect(url_for('main.obra_detalhe', obra_id=obra_id))
+
+                obra.imagem = relative_url
                 db.session.commit()
                 flash('Imagem atualizada com sucesso!', 'success')
-            else:
-                flash('Erro ao salvar o arquivo.', 'danger')
 
         except Exception as e:
             flash(f'Erro ao processar imagem: {e!s}', 'danger')
-            print(f'Erro no upload: {e}')
+            current_app.logger.error(f'Erro no upload: {e}')
 
     return redirect(url_for('main.obra_detalhe', obra_id=obra_id))
 
@@ -337,14 +349,18 @@ def remover_imagem_obra(obra_id):
 
     if obra.imagem:
         try:
-            import os
-
-            # Remover arquivo físico
-            caminho_arquivo = os.path.join('app', obra.imagem.lstrip('/'))
-            if os.path.exists(caminho_arquivo):
-                os.remove(caminho_arquivo)
+            if obra.imagem.startswith('http'):
+                # Imagem no S3
+                success, error = StorageService.delete_file(obra.imagem)
+                if not success:
+                    current_app.logger.warning(f'Erro ao remover S3: {error}')
+            else:
+                # Imagem local
+                success, error = StorageService.delete_local_file(obra.imagem)
+                if not success:
+                    current_app.logger.warning(f'Erro ao remover local: {error}')
         except Exception as e:
-            flash(f'Erro ao remover arquivo: {e!s}', 'warning')
+            current_app.logger.warning(f'Erro ao remover imagem: {e}')
 
         # Remover referência do banco
         obra.imagem = None
