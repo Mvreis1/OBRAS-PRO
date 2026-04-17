@@ -5,7 +5,11 @@ Monitoramento e métricas do sistema OBRAS PRO
 import time
 from datetime import datetime
 
-import psutil
+try:
+    import psutil
+except ImportError:
+    psutil = None
+
 from flask import Blueprint, jsonify, Response
 
 from app.routes.auth import login_required

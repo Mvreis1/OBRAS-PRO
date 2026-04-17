@@ -21,7 +21,7 @@ class Notificacao(db.Model):
     mensagem = db.Column(db.Text)
     lida = db.Column(db.Boolean, default=False)
     enviada_email = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
     empresa = db.relationship('Empresa', backref='notificacoes')
 
@@ -51,8 +51,8 @@ class ConfigEmail(db.Model):
     email_destino = db.Column(db.String(200))
     alertas_ativos = db.Column(db.Boolean, default=True)
     ultimo_envio = db.Column(db.DateTime)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
     def to_dict(self):
         return {

@@ -25,7 +25,7 @@ def historico_geral():
     periodo = request.args.get('periodo', '30')  # dias
 
     # Calcular data início
-    data_fim = datetime.utcnow()
+    data_fim = datetime.now()
     data_inicio = data_fim - timedelta(days=int(periodo))
 
     paginacao = AuditTrail.get_historico_empresa(
@@ -64,7 +64,7 @@ def api_historico():
     entidade = request.args.get('entidade')
     page = request.args.get('page', 1, type=int)
 
-    data_fim = datetime.utcnow()
+    data_fim = datetime.now()
     data_inicio = data_fim - timedelta(days=periodo)
 
     paginacao = AuditTrail.get_historico_empresa(
@@ -93,7 +93,7 @@ def estatisticas():
     empresa_id = session.get('empresa_id')
 
     periodo = request.args.get('periodo', '30', type=int)
-    data_fim = datetime.utcnow()
+    data_fim = datetime.now()
     data_inicio = data_fim - timedelta(days=periodo)
 
     from sqlalchemy import func

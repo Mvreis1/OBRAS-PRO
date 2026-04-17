@@ -7,6 +7,7 @@ from flask import Blueprint, flash, jsonify, redirect, render_template, request,
 from app.models import Usuario, db
 from app.models.acesso import Permissao, PermissaoUsuario, Role, RolePermissao
 from app.routes.auth import login_required
+from app.services.rbac_service import RBACService
 from app.utils.rbac import Acoes, Modulos, require_permission
 
 rbac_bp = Blueprint('rbac', __name__)
@@ -20,16 +21,9 @@ def get_usuario_id():
 @login_required
 @require_permission(Modulos.ROLES, Acoes.VER)
 def listar_roles():
-    """Lista todos os roles da empresa"""
+    """Lista todos os roles da empresa usando RBACService"""
     empresa_id = session.get('empresa_id')
-
-    # Roles globais (sistema) + roles da empresa
-    roles = (
-        Role.query.filter(db.or_(Role.empresa_id.is_(None), Role.empresa_id == empresa_id))
-        .order_by(Role.is_system.desc(), Role.nome)
-        .all()
-    )
-
+    roles = RBACService.get_roles_empresa(empresa_id)
     return render_template('rbac/roles.html', roles=roles)
 
 
@@ -37,42 +31,25 @@ def listar_roles():
 @login_required
 @require_permission(Modulos.ROLES, Acoes.CRIAR)
 def novo_role():
-    """Cria novo role"""
+    """Cria novo role usando RBACService"""
+    empresa_id = session.get('empresa_id')
+
     if request.method == 'POST':
         nome = request.form.get('nome', '').strip()
         descricao = request.form.get('descricao', '').strip()
-        permissoes = request.form.getlist('permissoes')
+        permissoes_ids = [int(p) for p in request.form.getlist('permissoes')]
 
-        if not nome:
-            flash('Nome do perfil é obrigatório.', 'danger')
+        _, erro = RBACService.criar_role(empresa_id, nome, descricao, permissoes_ids)
+
+        if erro:
+            flash(erro, 'danger')
             return redirect(url_for('rbac.novo_role'))
 
-        if Role.query.filter_by(nome=nome).first():
-            flash('Nome de perfil já existe.', 'danger')
-            return redirect(url_for('rbac.novo_role'))
-
-        role = Role(nome=nome, descricao=descricao, empresa_id=session.get('empresa_id'))
-        db.session.add(role)
-        db.session.flush()
-
-        # Adicionar permissões
-        for perm_id in permissoes:
-            assoc = RolePermissao(role_id=role.id, permissao_id=int(perm_id))
-            db.session.add(assoc)
-
-        db.session.commit()
         flash('Perfil criado com sucesso!', 'success')
         return redirect(url_for('rbac.listar_roles'))
 
-    # GET: mostrar formulário
-    permissoes = Permissao.query.order_by(Permissao.modulo, Permissao.acao).all()
-
-    # Agrupar por módulo
-    permissoes_por_modulo = {}
-    for perm in permissoes:
-        if perm.modulo not in permissoes_por_modulo:
-            permissoes_por_modulo[perm.modulo] = []
-        permissoes_por_modulo[perm.modulo].append(perm)
+    # GET: mostrar formulário usando RBACService
+    permissoes_por_modulo = RBACService.get_permissoes_agrupadas()
 
     return render_template(
         'rbac/role_form.html', role=None, permissoes_por_modulo=permissoes_por_modulo
@@ -83,10 +60,10 @@ def novo_role():
 @login_required
 @require_permission(Modulos.ROLES, Acoes.EDITAR)
 def editar_role(role_id):
-    """Edita role existente"""
+    """Edita role existente usando RBACService"""
     empresa_id = session.get('empresa_id')
 
-    # Query simplificada: busca role global (empresa_id IS NULL) ou da empresa atual
+    # GET: buscar role para exibição
     role = Role.query.filter(
         db.or_(
             db.and_(Role.id == role_id, Role.empresa_id.is_(None)),
@@ -101,30 +78,20 @@ def editar_role(role_id):
         return redirect(url_for('rbac.listar_roles'))
 
     if request.method == 'POST':
-        role.nome = request.form.get('nome', '').strip()
-        role.descricao = request.form.get('descricao', '').strip()
-        permissoes = request.form.getlist('permissoes')
+        nome = request.form.get('nome', '').strip()
+        descricao = request.form.get('descricao', '').strip()
+        permissoes_ids = [int(p) for p in request.form.getlist('permissoes')]
 
-        # Remover permissões existentes
-        RolePermissao.query.filter_by(role_id=role.id).delete()
+        role, erro = RBACService.editar_role(role_id, empresa_id, nome, descricao, permissoes_ids)
 
-        # Adicionar novas permissões
-        for perm_id in permissoes:
-            assoc = RolePermissao(role_id=role.id, permissao_id=int(perm_id))
-            db.session.add(assoc)
+        if erro:
+            flash(erro, 'danger')
+        else:
+            flash('Perfil atualizado com sucesso!', 'success')
+            return redirect(url_for('rbac.listar_roles'))
 
-        db.session.commit()
-        flash('Perfil atualizado com sucesso!', 'success')
-        return redirect(url_for('rbac.listar_roles'))
-
-    # GET
-    permissoes = Permissao.query.order_by(Permissao.modulo, Permissao.acao).all()
-    permissoes_por_modulo = {}
-    for perm in permissoes:
-        if perm.modulo not in permissoes_por_modulo:
-            permissoes_por_modulo[perm.modulo] = []
-        permissoes_por_modulo[perm.modulo].append(perm)
-
+    # GET: carregar permissões para formulário usando RBACService
+    permissoes_por_modulo = RBACService.get_permissoes_agrupadas()
     role_perm_ids = [p.id for p in role.permissoes]
 
     return render_template(
@@ -139,21 +106,16 @@ def editar_role(role_id):
 @login_required
 @require_permission(Modulos.ROLES, Acoes.EXCLUIR)
 def excluir_role(role_id):
-    """Exclui role"""
+    """Exclui role usando RBACService"""
     empresa_id = session.get('empresa_id')
-    role = Role.query.filter(Role.id == role_id, Role.empresa_id == empresa_id).first_or_404()
 
-    if role.is_system:
-        flash('Roles do sistema não podem ser excluídos.', 'danger')
-        return redirect(url_for('rbac.listar_roles'))
+    _, erro = RBACService.excluir_role(role_id, empresa_id)
 
-    if role.usuarios and role.usuarios.count() > 0:
-        flash('Não é possível excluir um perfil que possui usuários.', 'danger')
-        return redirect(url_for('rbac.listar_roles'))
+    if erro:
+        flash(erro, 'danger')
+    else:
+        flash('Perfil excluído com sucesso!', 'success')
 
-    db.session.delete(role)
-    db.session.commit()
-    flash('Perfil excluído com sucesso!', 'success')
     return redirect(url_for('rbac.listar_roles'))
 
 

@@ -172,7 +172,7 @@ def recuperar_senha():
 
     # Gerar token de recuperação seguro
     token = secrets.token_urlsafe(32)
-    expiry = datetime.utcnow() + timedelta(hours=1)
+    expiry = datetime.now() + timedelta(hours=1)
 
     # Armazenar token temporariamente no usuário (em produção, usar tabela separada)
     usuario.token_recuperacao = token
@@ -194,7 +194,7 @@ def definir_nova_senha(token):
         flash('Token inválido ou expirado.', 'danger')
         return redirect(url_for('auth.login'))
 
-    if datetime.utcnow() > usuario.token_expiry:
+    if datetime.now() > usuario.token_expiry:
         flash('Token expirado. Solicite novamente.', 'danger')
         return redirect(url_for('auth.login'))
 

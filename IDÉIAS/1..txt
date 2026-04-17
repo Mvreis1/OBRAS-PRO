@@ -1,0 +1,23 @@
+1.
+Acesse: http://localhost:5000
+2.
+Clique em "Criar nova conta" (canto inferior direito da tela de login)
+3.
+Preencha os dados:
+Campo
+Exemplo
+Nome da Empresa
+Minha Construtora LTDA
+URL da Empresa
+minha-construtora
+CNPJ
+(opcional)
+Telefone
+(opcional)
+Seu Email
+admin@teste.com
+Senha
+admin123
+
+
+cd C:\Users\marcelo\Desktop\OBRAS_FINANCEIRO && C:\Users\marcelo\AppData\Local\Programs\Python\Python311\python.exe run.py

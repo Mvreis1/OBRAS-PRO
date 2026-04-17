@@ -67,7 +67,7 @@ class StorageService:
 
             # Gerar nome único com timestamp
             if not filename:
-                timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                 filename = f'{timestamp}_{original_filename}'
 
             # Caminho completo no S3
@@ -218,7 +218,7 @@ class StorageService:
             if not extensao:
                 return None, 'Arquivo sem extensão'
 
-            timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             if not filename:
                 filename = f'{timestamp}_{original_filename}'
 

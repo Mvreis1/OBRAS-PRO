@@ -1,30 +1,35 @@
 Flask==3.0.0
 Flask-SQLAlchemy==3.1.1
-Flask-Migrate==4.0.7
+Flask-Migrate==4.1.0
 Flask-WTF==1.2.2
 WTForms==3.2.1
-Werkzeug==3.0.1
+Werkzeug==3.1.8
 pyotp==2.9.0
-qrcode==8.2
-gunicorn==21.2.0
+qrcode[pil]==8.2
+gunicorn==25.3.0
 psycopg2-binary==2.9.9
 openai==1.12.0
 reportlab==4.0.9
-Flask-Caching==2.3.1
+Flask-Caching==2.4.0
 flask-mail==0.10.0
 Pillow==10.3.0
 cachelib==0.13.0
-Flask-Limiter==3.5.0
-email-validator==2.1.1
+Flask-Limiter==4.1.1
+email-validator==2.3.0
 openpyxl==3.1.5
 Flasgger==0.9.7.1
 APScheduler==3.10.4
 psutil==5.9.8
 Flask-Login==0.6.3
+Flask-Babel==4.0.0
+Flask-Session==0.8.0
 bcrypt==4.1.2
 requests==2.31.0
 python-decouple==3.8
 boto3==1.34.0
+bleach==6.3.0
+markdown==3.10.2
+pdfkit==1.0.0
 
 # IA opcional
 google-generativeai==0.3.2
@@ -36,3 +41,5 @@ redis==5.0.1
 # Observabilidade
 sentry-sdk[flask]==1.40.0
 prometheus-client==0.19.0
+phonenumbers==9.0.28
+python-dateutil==2.9.0

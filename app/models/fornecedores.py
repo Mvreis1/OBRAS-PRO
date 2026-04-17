@@ -30,8 +30,8 @@ class Fornecedor(db.Model, SoftDeleteMixin):
     observacoes = db.Column(db.Text)
     ativo = db.Column(db.Boolean, default=True)
 
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
     empresa = db.relationship('Empresa', backref='fornecedores')
 

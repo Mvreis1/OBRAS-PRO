@@ -17,7 +17,7 @@ class Permissao(db.Model):
     descricao = db.Column(db.String(200))
     modulo = db.Column(db.String(50), nullable=False, index=True)
     acao = db.Column(db.String(50), nullable=False, index=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
     __table_args__ = (db.Index('idx_permissao_modulo_acao', 'modulo', 'acao'),)
 
@@ -41,8 +41,8 @@ class Role(db.Model):
     descricao = db.Column(db.String(200))
     empresa_id = db.Column(db.Integer, db.ForeignKey('empresas.id'), nullable=True, index=True)
     is_system = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
     # Relationships - usando lazy='select' para evitar carregamento excessivo
     permissoes = db.relationship(
@@ -83,7 +83,7 @@ class PermissaoUsuario(db.Model):
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False, index=True)
     permissao_id = db.Column(db.Integer, db.ForeignKey('permissoes.id'), nullable=False, index=True)
     tipo = db.Column(db.String(10), default='allow')  # 'allow' ou 'deny'
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
     __table_args__ = (
         db.UniqueConstraint('usuario_id', 'permissao_id', name='unique_usuario_permissao'),

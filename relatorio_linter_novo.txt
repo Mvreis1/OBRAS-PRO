@@ -1,0 +1,7 @@
+﻿python : C:\Users\marcelo\AppData\Local\Programs\Python\Python312\python.exe: No module named ruff
+No linha:1 caractere:49
++ ... FINANCEIRO"; python -m ruff check . --output-format=text 2>&1 | Out-F ...
++                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (C:\Users\marcel...dule named ruff:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 

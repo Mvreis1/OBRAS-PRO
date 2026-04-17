@@ -1,0 +1,78 @@
+1 adicionar novo orçamento da erro:
+Internal Server Error
+The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.bbbbbbbbbbbbbbbbbbbbbbbbb
+
+2 Assistente IA local não funciona e as outras ainda não estão cadastradasbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+
+3 Em relação a print que te enviei  mostra erros de visualização em todo app  no modo dark corrigi-losbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+
+4 função de tema de fundo ainda não colocadabbbbbbbbbbbbbbbbbbbbbb
+b
+5 segunda print  não tem a opção de troca ou remover a imagem nas obras bbbbbbbbbbbbbbbbbbbbbbbb
+
+6 ainda está com problema ao enviar imagem para obras bbbbbbbbbbbbbbbbbbbbbb
+
+7 filtrar ainda não funciona em todas as funcionalidadesbbbbbbbbbbbbbbbb
+
+8 função adicionar orçamento não está funcionando ainda
+
+9
+
+
+
+1.
+Rodar ruff --fix para limpar 981 erros automáticos
+
+
+
+
+2
+Extrair lógica complexa das rotas para Services
+3.
+Adicionar testes nas rotas críticas (login, financeiro)
+
+
+Fase 2 - Refatoração:
+Fase 3 - Melhoria de Infra:
+
+4. Criar camada de Services (ex: app/services/obra_service.py) 
+
+5. Mover queries complexas para Repositories 
+
+6. Implementar DTOs para transferir dados entre camadas
+
+7. Separar config de produção (usar .env + python-decouple) 8. Adicionar CI/CD (GitHub Actions) 
+
+9. Implementar Docker Compose completo (app + postgres + redis)
+Onde você quer focar? Posso ajudar com:
+
+Refatorar código - Extrair services, limpar rotas, melhorar organização
+
+
+2.
+Adicionar testes - Cobertura nas funcionalidades críticas
+3.
+Corrigir linter - Resolver os 1376 issues encontrados
+4.
+
+
+
+Melhorar arquitetura - Implementar services/repositories
+5.
+Performance - Otimizar queries, caching, connection pool
+6.
+Deploy - Docker, CI/CD, configuração de produção
+Me diga qual área quer priorizar e eu começo a trabalhar.
+
+
+
+Painel de Cotações
+Renomear Automaticamente a Planta
+Contagem Automática do Levantamento
+Levantamento de Área Automática
+Catálogos de Custos (Pronto para Usar e Personalizado)
+Anotações, Tarefas
+Versões Ilimitadas de Levantamento e Estimativa
+Comparação de Plantas
+Biblioteca de Inclusões e Exclusões
+Importação e Exportação Ilimitadas

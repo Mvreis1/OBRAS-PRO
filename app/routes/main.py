@@ -136,14 +136,22 @@ def obra_detalhe(obra_id):
     # Usar service para dados agregados
     obra_data = DashboardService.get_obra_dashboard_data(obra_id, empresa_id)
 
+    dados_obra = {
+        'percentual': obra_data.get('percentual_orcamento', 0) if obra_data else 0,
+        'orcamento': obra_data.get('orcamento_previsto', 0) if obra_data else 0,
+        'gasto': obra_data.get('total_despesas', 0) if obra_data else 0,
+        'receita': obra_data.get('total_receitas', 0) if obra_data else 0,
+        'saldo': obra_data.get('saldo', 0) if obra_data else 0,
+    }
+
     return render_template(
         'main/obra_detalhe.html',
         obra=obra,
-        lancamentos=obra_data.get('lancamentos', []),
-        total_despesas=obra_data.get('total_despesas', 0),
-        total_receitas=obra_data.get('total_receitas', 0),
-        categorias=obra_data.get('despesas_por_categoria', []),
-        dados_obra=obra_data.get('dados_obra', {}),
+        lancamentos=obra_data.get('lancamentos', []) if obra_data else [],
+        total_despesas=obra_data.get('total_despesas', 0) if obra_data else 0,
+        total_receitas=obra_data.get('total_receitas', 0) if obra_data else 0,
+        categorias=obra_data.get('despesas_por_categoria', []) if obra_data else [],
+        dados_obra=dados_obra,
     )
 
 

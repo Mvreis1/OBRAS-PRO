@@ -169,6 +169,8 @@ def api_lancamentos():
     tipo = request.args.get('tipo')
     data_inicio = request.args.get('data_inicio')
     data_fim = request.args.get('data_fim')
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 50, type=int)
 
     query = Lancamento.query.filter_by(empresa_id=empresa_id)
 
@@ -185,9 +187,23 @@ def api_lancamentos():
 
         query = query.filter(Lancamento.data <= datetime.strptime(data_fim, '%Y-%m-%d').date())
 
-    lancamentos = query.order_by(Lancamento.data.desc()).limit(100).all()
+    query = query.order_by(Lancamento.data.desc())
 
-    return jsonify({'lancamentos': [l.to_dict() for l in lancamentos], 'total': len(lancamentos)})
+    from app.utils.paginacao import Paginacao
+
+    paginacao = Paginacao(query, page=page, per_page=per_page)
+
+    return jsonify(
+        {
+            'lancamentos': [l.to_dict() for l in paginacao.items],
+            'total': paginacao.total,
+            'page': page,
+            'per_page': per_page,
+            'pages': paginacao.pages,
+            'has_next': paginacao.has_next,
+            'has_prev': paginacao.has_prev,
+        }
+    )
 
 
 @api_bp.route('/lancamento', methods=['POST'])

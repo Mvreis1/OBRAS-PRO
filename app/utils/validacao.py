@@ -14,15 +14,68 @@ def validate_email(email):
 
 
 def validate_password(password):
-    """Valida força da senha: mínimo 8 caracteres, 1 letra e 1 número"""
+    """
+    Valida força da senha:
+    - Mínimo 8 caracteres (recomendado 12+)
+    - Pelo menos 1 letra maiúscula
+    - Pelo menos 1 letra minúscula
+    - Pelo menos 1 número
+    - Pelo menos 1 caractere especial
+    - Não pode ser senha comum
+    """
     if not password:
         return False, 'Senha é obrigatória.'
+
+    # Comprimento mínimo
     if len(password) < 8:
         return False, 'A senha deve ter pelo menos 8 caracteres.'
-    if not re.search(r'[A-Za-z]', password):
-        return False, 'A senha deve conter pelo menos uma letra.'
+
+    # Comprimento ideal
+    if len(password) < 12:
+        return False, 'Para maior segurança, use pelo menos 12 caracteres.'
+
+    # Maiúsculas
+    if not re.search(r'[A-Z]', password):
+        return False, 'A senha deve conter pelo menos uma letra maiúscula.'
+
+    # Minúsculas
+    if not re.search(r'[a-z]', password):
+        return False, 'A senha deve conter pelo menos uma letra minúscula.'
+
+    # Números
     if not re.search(r'[0-9]', password):
         return False, 'A senha deve conter pelo menos um número.'
+
+    # Caracteres especiais
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+        return False, 'A senha deve conter pelo menos um caractere especial (!@#$%^&*...).'
+
+    # Senhas comuns
+    common_passwords = [
+        'password',
+        '123456',
+        '12345678',
+        'qwerty',
+        'abc123',
+        'monkey',
+        'master',
+        'dragon',
+        'letmein',
+        'login',
+        'admin',
+        'welcome',
+        'iloveyou',
+        'princess',
+        'sunshine',
+        '123123',
+        'password1',
+        '1234567890',
+        'senha123',
+        'admin123',
+    ]
+    if password.lower() in common_passwords:
+        return False, 'Esta senha é muito comum. Escolha uma senha mais forte.'
+
     return True, ''
 
 

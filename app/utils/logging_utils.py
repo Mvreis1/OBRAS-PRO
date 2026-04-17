@@ -16,7 +16,7 @@ class StructuredFormatter(logging.Formatter):
 
     def format(self, record):
         log_data = {
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now().isoformat(),
             'level': record.levelname,
             'logger': record.name,
             'message': record.getMessage(),

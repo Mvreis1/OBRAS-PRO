@@ -122,6 +122,12 @@ def _setup_monitoring(app):
         init_monitoring(app)
     except Exception as e:
         print(f'Monitoramento nao inicializado: {e}')
+        try:
+            from app.utils.monitoring import monitor_bp
+
+            app.register_blueprint(monitor_bp, url_prefix='/monitor')
+        except Exception:
+            pass
 
 
 def _setup_backups(app):
@@ -157,50 +163,51 @@ def _create_tables(app):
 
 def _seed_data(app):
     """Inicializa dados básicos"""
-    try:
-        with app.app_context():
-            from app.models.acesso import Role
-            from app.models import Usuario, Empresa
-            from seed_rbac import seed_permissoes, seed_roles
+    with app.app_context():
+        from app.models import Empresa, Usuario, db
+        from app.models.acesso import Role, Permissao
 
-            if not Role.query.first():
-                app.logger.info('Inicializando roles e permissoes...')
-                seed_permissoes()
-                seed_roles()
-                db.session.commit()
+        # Criar roles básicas
+        if not Role.query.first():
+            roles = [
+                Role(nome='Administrador', is_system=True, descricao='Acesso total'),
+                Role(nome='Gerente', is_system=True, descricao='Gerencia obras'),
+                Role(nome='Financeiro', is_system=True, descricao='Acesso financeiro'),
+                Role(nome='Visitante', is_system=True, descricao='Apenas visualizacao'),
+            ]
+            db.session.add_all(roles)
+            db.session.commit()
 
-            # Criar admin se não existir
-            if not Usuario.query.filter_by(email='admin@demo.com').first():
-                app.logger.info('Criando usuario admin...')
-                empresa = Empresa.query.first() or Empresa(
-                    nome='Demo Construções',
-                    slug='demo',
-                    email='admin@demo.com',
-                    plano='enterprise',
-                    max_usuarios=100,
-                    max_obras=1000,
-                )
-                if not Empresa.query.first():
-                    db.session.add(empresa)
-                    db.session.flush()
+        # Criar empresa
+        if not Empresa.query.first():
+            empresa = Empresa(
+                nome='Demo Construções',
+                slug='demo',
+                email='admin@demo.com',
+                plano='enterprise',
+                max_usuarios=100,
+                max_obras=1000,
+            )
+            db.session.add(empresa)
+            db.session.commit()
 
-                admin_role = Role.query.filter_by(nome='Administrador', is_system=True).first()
-                admin = Usuario(
-                    empresa_id=empresa.id,
-                    nome='Admin Demo',
-                    email='admin@demo.com',
-                    username='admin',
-                    cargo='Administrador',
-                    role='admin',
-                    role_id=admin_role.id if admin_role else None,
-                )
-                admin.set_senha('admin123')
-                db.session.add(admin)
-                db.session.commit()
-                app.logger.info('Admin criado com sucesso')
-
-    except Exception:
-        pass
+        # Criar admin
+        if not Usuario.query.filter_by(email='admin@demo.com').first():
+            empresa = Empresa.query.first()
+            admin_role = Role.query.filter_by(nome='Administrador').first()
+            admin = Usuario(
+                empresa_id=empresa.id,
+                nome='Admin Demo',
+                email='admin@demo.com',
+                username='admin',
+                cargo='Administrador',
+                role='admin',
+                role_id=admin_role.id if admin_role else None,
+            )
+            admin.set_senha('admin123')
+            db.session.add(admin)
+            db.session.commit()
+            app.logger.info('Admin created: admin@demo.com / admin123')
 
 
 def _register_special_routes(app):

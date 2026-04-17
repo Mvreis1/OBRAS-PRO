@@ -7,9 +7,8 @@ from flask import Blueprint, jsonify, redirect, render_template, request, sessio
 from app.config import OPENAI_API_KEY
 from app.models import ConfigIA
 from app.routes.auth import login_required
-from app.utils.ia import gerar_resposta, get_contexto_empresa
-
 from app.services.ia_service import IAService
+from app.utils.ia import gerar_resposta, get_contexto_empresa
 
 ia_bp = Blueprint('ia', __name__)
 
@@ -37,11 +36,7 @@ def chat_ia():
     empresa_id = session.get('empresa_id')
 
     # Usar o serviço centralizado de IA
-    resposta = IAService.chat(
-        empresa_id=empresa_id,
-        mensagem=mensagem,
-        modelo=modelo
-    )
+    resposta = IAService.chat(empresa_id=empresa_id, mensagem=mensagem, modelo=modelo)
 
     return jsonify({'resposta': resposta})
 
@@ -49,14 +44,5 @@ def chat_ia():
 @ia_bp.route('/botoes', methods=['GET'])
 @login_required
 def ia_botoes():
-    """API para botões rápidos do IA"""
-    return jsonify(
-        [
-            {'texto': 'Relatório de custos', 'acao': 'custo'},
-            {'texto': 'Alertas de risco', 'acao': 'risco'},
-            {'texto': 'Ver todas as obras', 'acao': 'obra'},
-            {'texto': 'Saldo geral', 'acao': 'saldo'},
-            {'texto': 'Por que negativo?', 'acao': 'negativo'},
-            {'texto': 'Exportar relatório', 'acao': 'exportar'},
-        ]
-    )
+    """API para botões rápidos do IA usando IAService"""
+    return jsonify(IAService.get_quick_buttons())

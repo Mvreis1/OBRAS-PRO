@@ -19,14 +19,14 @@ class AuthService:
             return None, None, 'Email ou senha inválidos.'
 
         # Check if account is locked
-        if usuario.bloqueado_ate and usuario.bloqueado_ate > datetime.utcnow():
+        if usuario.bloqueado_ate and usuario.bloqueado_ate > datetime.now():
             return None, None, 'Conta temporariamente bloqueada. Tente novamente mais tarde.'
 
         if not usuario.verificar_senha(senha):
             # Increment failed attempts
             usuario.tentativas_login += 1
             if usuario.tentativas_login >= 5:
-                usuario.bloqueado_ate = datetime.utcnow() + timedelta(minutes=15)
+                usuario.bloqueado_ate = datetime.now() + timedelta(minutes=15)
                 db.session.commit()
                 return None, None, 'Muitas tentativas falhas. Conta bloqueada por 15 minutos.'
             db.session.commit()

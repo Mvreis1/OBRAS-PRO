@@ -133,12 +133,45 @@ class Usuario(db.Model):
         deny = (
             PermissaoUsuario.query.filter_by(usuario_id=self.id, tipo='deny')
             .join(Permissao)
-            .filter(Permissao.modulo == modulo)
+            .filter((Permissao.modulo == modulo) | (Permissao.modulo == '*'))
             .all()
         )
         for d in deny:
             if acao is None or d.permissao.acao in (acao, '*'):
                 return False
+
+        # Check individual allows
+        if acao:
+            allow = (
+                PermissaoUsuario.query.filter_by(usuario_id=self.id, tipo='allow')
+                .join(Permissao)
+                .filter((Permissao.modulo == modulo) | (Permissao.modulo == '*'))
+                .filter((Permissao.acao == acao) | (Permissao.acao == '*'))
+                .first()
+            )
+            if allow:
+                return True
+
+        # Check role permissions - eager load no role_obj
+        if self.role_id:
+            from app.models.acesso import Permissao as PermissaoModel, RolePermissao
+
+            role_perms = (
+                db.session.query(RolePermissao)
+                .join(PermissaoModel)
+                .filter(
+                    RolePermissao.role_id == self.role_id,
+                    (PermissaoModel.modulo == modulo) | (PermissaoModel.modulo == '*'),
+                )
+                .all()
+            )
+
+            for rp in role_perms:
+                perm = db.session.get(PermissaoModel, rp.permissao_id)
+                if acao is None or perm.acao in (acao, '*'):
+                    return True
+
+        return False
 
         # Check individual allows
         if acao:
@@ -161,7 +194,10 @@ class Usuario(db.Model):
             role_perms = (
                 db.session.query(RolePermissao)
                 .join(PermissaoModel)
-                .filter(RolePermissao.role_id == self.role_id, PermissaoModel.modulo == modulo)
+                .filter(
+                    RolePermissao.role_id == self.role_id,
+                    (PermissaoModel.modulo == modulo) | (PermissaoModel.modulo == '*'),
+                )
                 .all()
             )
 

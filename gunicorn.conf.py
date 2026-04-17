@@ -6,6 +6,7 @@ Centralized settings for production deployment
 import multiprocessing
 import os
 
+
 # Helper para ler variáveis de ambiente
 def get_env(key, default):
     """Get environment variable with default"""

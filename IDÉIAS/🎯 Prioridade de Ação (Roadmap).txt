@@ -1,0 +1,63 @@
+🎯 Prioridade de Ação (Roadmap)
+📌 Fase 1 - Mínimo Vendável (4-6 semanas)
+1.
+ Paginação em todas as listagens
+2.
+ Flask-Migrate (Alembic)
+3.
+✅ Proteção CSRF + 2FA
+4.
+✅ Upload de comprovantes (PDF/imagem)
+5.
+✅ RBAC com permissões granulares
+6.
+✅ Testes básicos (auth, CRUDs principais)
+7.
+✅ Exportação Excel real (openpyxl)
+📌 Fase 2 - Diferenciais Competitivos (6-8 semanas)
+8.
+✅ Medições de obra (avanço físico)
+9.
+✅ Fluxo de caixa projetado
+10.
+✅ Dashboard personalizável
+11.
+✅ API REST completa com Swagger
+12.
+✅ Backup automático
+13.
+✅ Docker + CI/CD
+14.
+✅ LGPD compliance
+📌 Fase 3 - Enterprise (8-12 semanas)
+15.
+✅ Multi-CNPJ/centros de custo
+16.
+✅ Integração bancária (PIX/boleto API)
+17.
+✅ Curva ABC de materiais
+18.
+✅ Diário de obra
+19.
+✅ Certidões de fornecedores
+20.
+✅ SPED/DCF export
+21.
+✅ Webhooks para integrações
+💡 Recomendação Estratégica
+Para vender agora mesmo para pequenas construtoras (1-50 funcionários):
+•
+Seu sistema já funciona para o básico
+•
+Foque na Fase 1 para fechar contratos de R$300-800/mês
+Para empresas médias (50-500 funcionários):
+•
+Precisa da Fase 1 + Fase 2
+•
+Preço: R$1.000-3.000/mês
+Para grandes construtoras (500+ funcionários):
+•
+Precisa de tudo (Fase 1+2+3)
+•
+Preço: R$5.000-15.000/mês
+Quer que eu comece a implementar alguma dessas melhorias? Posso começar pela Fase 1 (paginação, CSRF, 2FA, upload de comprovantes, etc.) ou focar em algo específico que você considere mais urgente.

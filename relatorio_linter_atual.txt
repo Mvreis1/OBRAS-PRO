@@ -1,0 +1,229 @@
+﻿I001 [*] Import block is un-sorted or un-formatted
+ --> gunicorn.conf.py:6:1
+  |
+4 |   """
+5 |
+6 | / import multiprocessing
+7 | | import os
+  | |_________^
+8 |
+9 |   # Helper para ler vari├íveis de ambiente
+  |
+help: Organize imports
+
+B007 Loop control variable `i` not used within loop body
+  --> tests\test_auth_completo.py:82:13
+   |
+80 |         """Conta bloqueada ap├│s 5 tentativas falhas"""
+81 |         # 4 tentativas falhas
+82 |         for i in range(4):
+   |             ^
+83 |             client.post(
+84 |                 '/auth/login',
+   |
+help: Rename unused `i` to `_i`
+
+B007 Loop control variable `i` not used within loop body
+   --> tests\test_auth_completo.py:107:13
+    |
+105 |         """Tentativas resetam ap├│s login bem-sucedido"""
+106 |         # 3 tentativas falhas
+107 |         for i in range(3):
+    |             ^
+108 |             client.post(
+109 |                 '/auth/login',
+    |
+help: Rename unused `i` to `_i`
+
+F841 Local variable `response` is assigned to but never used
+   --> tests\test_auth_completo.py:165:9
+    |
+163 |     def test_session_destruida_apos_logout(self, client, admin_session):
+164 |         """Session ├® limpa ap├│s logout"""
+165 |         response = client.get('/auth/logout', follow_redirects=True)
+    |         ^^^^^^^^
+166 |
+167 |         with client.session_transaction() as sess:
+    |
+help: Remove assignment to unused variable `response`
+
+RUF059 Unpacked variable `empresa` is never used
+  --> tests\test_services.py:67:22
+   |
+65 |             db.session.commit()
+66 |
+67 |             usuario, empresa, error = AuthService.authenticate(
+   |                      ^^^^^^^
+68 |                 'admin@teste.com', 'admin123'
+69 |             )
+   |
+help: Prefix it with an underscore or any other dummy variable pattern
+
+RUF059 Unpacked variable `empresa` is never used
+  --> tests\test_services.py:81:22
+   |
+79 |             db.session.commit()
+80 |
+81 |             usuario, empresa, error = AuthService.authenticate(
+   |                      ^^^^^^^
+82 |                 'admin@teste.com', 'admin123'
+83 |             )
+   |
+help: Prefix it with an underscore or any other dummy variable pattern
+
+RUF059 Unpacked variable `error` is never used
+  --> tests\test_services.py:81:31
+   |
+79 |             db.session.commit()
+80 |
+81 |             usuario, empresa, error = AuthService.authenticate(
+   |                               ^^^^^
+82 |                 'admin@teste.com', 'admin123'
+83 |             )
+   |
+help: Prefix it with an underscore or any other dummy variable pattern
+
+RUF059 Unpacked variable `error` is never used
+   --> tests\test_services.py:105:16
+    |
+103 |     def test_validar_slug_vazio(self):
+104 |         """Valida├º├úo de slug vazio"""
+105 |         valid, error = EmpresaService.validar_slug('')
+    |                ^^^^^
+106 |         assert valid is False
+    |
+help: Prefix it with an underscore or any other dummy variable pattern
+
+RUF059 Unpacked variable `error` is never used
+   --> tests\test_services.py:111:24
+    |
+109 |         """Verificar slug dispon├¡vel"""
+110 |         with app.app_context():
+111 |             available, error = EmpresaService.verificar_slug_disponivel('slug-novo')
+    |                        ^^^^^
+112 |             assert available is True
+    |
+help: Prefix it with an underscore or any other dummy variable pattern
+
+RUF059 Unpacked variable `error` is never used
+   --> tests\test_services.py:206:22
+    |
+204 |             obra, _ = ObraService.criar_obra(empresa_id, {'nome': 'Obra Para Excluir'})
+205 |
+206 |             success, error = ObraService.excluir_obra(obra.id, empresa_id)
+    |                      ^^^^^
+207 |
+208 |             assert success is True
+    |
+help: Prefix it with an underscore or any other dummy variable pattern
+
+W293 [*] Blank line contains whitespace
+   --> tests\test_services.py:361:1
+    |
+359 |         with app.app_context():
+360 |             empresa_id = admin_user.empresa_id
+361 |             
+    | ^^^^^^^^^^^^
+362 |             # Cria obra primeiro
+363 |             obra = Obra(empresa_id=empresa_id, nome='Obra Teste Lancamento', status='Em Execu├º├úo')
+    |
+help: Remove whitespace from blank line
+
+W293 [*] Blank line contains whitespace
+   --> tests\test_services.py:366:1
+    |
+364 |             db.session.add(obra)
+365 |             db.session.commit()
+366 |             
+    | ^^^^^^^^^^^^
+367 |             dados = {
+368 |                 'descricao': 'Lan├ºamento Teste',
+    |
+help: Remove whitespace from blank line
+
+W293 [*] Blank line contains whitespace
+   --> tests\test_services.py:403:1
+    |
+401 |         with app.app_context():
+402 |             empresa_id = admin_user.empresa_id
+403 |             
+    | ^^^^^^^^^^^^
+404 |             # Cria obra primeiro
+405 |             obra = Obra(empresa_id=empresa_id, nome='Obra Editar Service', status='Em Execu├º├úo')
+    |
+help: Remove whitespace from blank line
+
+W293 [*] Blank line contains whitespace
+   --> tests\test_services.py:440:1
+    |
+438 |         with app.app_context():
+439 |             empresa_id = admin_user.empresa_id
+440 |             
+    | ^^^^^^^^^^^^
+441 |             # Cria obra primeiro
+442 |             obra = Obra(empresa_id=empresa_id, nome='Obra Filtros Service', status='Em Execu├º├úo')
+    |
+help: Remove whitespace from blank line
+
+W293 [*] Blank line contains whitespace
+   --> tests\test_services.py:475:1
+    |
+473 |         with app.app_context():
+474 |             empresa_id = admin_user.empresa_id
+475 |             
+    | ^^^^^^^^^^^^
+476 |             # Cria obra
+477 |             obra = Obra(empresa_id=empresa_id, nome='Obra Relatorio', status='Em Execu├º├úo')
+    |
+help: Remove whitespace from blank line
+
+W293 [*] Blank line contains whitespace
+   --> tests\test_services.py:541:1
+    |
+539 |         with app.app_context():
+540 |             empresa_id = admin_user.empresa_id
+541 |             
+    | ^^^^^^^^^^^^
+542 |             # Cria obra
+543 |             obra = Obra(empresa_id=empresa_id, nome='Obra Evolucao', status='Em Execu├º├úo')
+    |
+help: Remove whitespace from blank line
+
+W293 [*] Blank line contains whitespace
+   --> tests\test_services.py:573:1
+    |
+571 |         with app.app_context():
+572 |             empresa_id = admin_user.empresa_id
+573 |             
+    | ^^^^^^^^^^^^
+574 |             # Cria obra
+575 |             obra = Obra(empresa_id=empresa_id, nome='Obra Categorias', status='Em Execu├º├úo')
+    |
+help: Remove whitespace from blank line
+
+W293 [*] Blank line contains whitespace
+   --> tests\test_services.py:672:1
+    |
+670 |             # Clear any pending session state from previous tests
+671 |             db.session.rollback()
+672 |             
+    | ^^^^^^^^^^^^
+673 |             # Use test client with session to ensure session variables are available
+674 |             with app.test_client() as client:
+    |
+help: Remove whitespace from blank line
+
+W293 [*] Blank line contains whitespace
+   --> tests\test_services.py:678:1
+    |
+676 |                     sess['usuario_id'] = admin_user.id
+677 |                     sess['empresa_id'] = admin_user.empresa_id
+678 |                 
+    | ^^^^^^^^^^^^^^^^
+679 |                 # Make a request to ensure session is active when calling log
+680 |                 # The session persists for all requests within the test_client context
+    |
+help: Remove whitespace from blank line
+
+Found 19 errors.
+[*] 10 fixable with the `--fix` option (9 hidden fixes can be enabled with the `--unsafe-fixes` option).

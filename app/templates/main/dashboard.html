@@ -329,13 +329,13 @@ function aplicarEstadoValores(escondido) {
             labels: {{ dados_grafico_mes|map(attribute='mes')|list|tojson }},
             datasets: [{
                 label: 'Receitas',
-                data: {{ dados_grafico_mes|map(attribute='receita')|list|tojson }},
+                data: {{ dados_grafico_mes|map(attribute='receitas')|list|tojson }},
                 backgroundColor: '#4ade80',
                 borderRadius: 4,
                 borderSkipped: false
             }, {
                 label: 'Despesas',
-                data: {{ dados_grafico_mes|map(attribute='despesa')|list|tojson }},
+                data: {{ dados_grafico_mes|map(attribute='despesas')|list|tojson }},
                 backgroundColor: '#f87171',
                 borderRadius: 4,
                 borderSkipped: false
@@ -377,9 +377,10 @@ function aplicarEstadoValores(escondido) {
     new Chart(categoriaCtx, {
         type: 'doughnut',
         data: {
-            labels: {{ dados_pizza|map(attribute='categoria')|list|tojson }},
+labels: {{ dados_pizza|map(attribute='categoria')|list|tojson }},
             datasets: [{
-                data: {{ dados_pizza|map(attribute='valor')|list|tojson }},
+                label: 'Valor (R$)',
+                data: {{ dados_pizza|map(attribute='total')|list|tojson }},
                 backgroundColor: [
                     '#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe',
                     '#f87171', '#fca5a5', '#fecaca',

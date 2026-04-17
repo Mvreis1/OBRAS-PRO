@@ -1,18 +1,18 @@
-"""Relatorio service - Financial reporting"""
+"""Relatorio service - Financial reporting com otimizacoes SQL"""
 
 from datetime import date, datetime, timedelta
 
-from sqlalchemy import func
+from sqlalchemy import case, func
 
 from app.models import Lancamento, Obra, db
 
 
 class RelatorioService:
-    """Service for financial reports and analytics"""
+    """Service for financial reports and analytics - OPTIMIZED"""
 
     @staticmethod
     def get_relatorio_geral(empresa_id, data_inicio=None, data_fim=None, obra_id=None):
-        """Get general financial report. Returns dict with all report data"""
+        """Get general financial report using SQL aggregation. Returns dict with all report data"""
         query = Lancamento.query.filter_by(empresa_id=empresa_id)
 
         if obra_id:
@@ -24,15 +24,25 @@ class RelatorioService:
         if data_fim:
             query = query.filter(Lancamento.data <= datetime.strptime(data_fim, '%Y-%m-%d').date())
 
-        lancamentos = query.all()
-        total_receitas = sum(l.valor for l in lancamentos if l.tipo == 'Receita')
-        total_despesas = sum(l.valor for l in lancamentos if l.tipo == 'Despesa')
-        lucro_prejuizo = total_receitas - total_despesas
+        result = (
+            db.session.query(
+                func.sum(case((Lancamento.tipo == 'Receita', Lancamento.valor), else_=0)).label(
+                    'receita'
+                ),
+                func.sum(case((Lancamento.tipo == 'Despesa', Lancamento.valor), else_=0)).label(
+                    'despesa'
+                ),
+            )
+            .filter(Lancamento.id.in_(query.with_entities(Lancamento.id).subquery()))
+            .first()
+        )
 
+        total_receitas = result.receita or 0
+        total_despesas = result.despesa or 0
+        lucro_prejuizo = total_receitas - total_despesas
         margem_geral = (lucro_prejuizo / total_receitas) * 100 if total_receitas > 0 else None
 
         return {
-            'lancamentos': lancamentos,
             'total_receitas': total_receitas,
             'total_despesas': total_despesas,
             'lucro_prejuizo': lucro_prejuizo,
@@ -41,27 +51,46 @@ class RelatorioService:
 
     @staticmethod
     def calcular_lucro_por_obra(empresa_id, data_inicio=None, data_fim=None):
-        """Calculate profitability per project. Returns list of dicts"""
+        """Calculate profitability per project using SQL JOIN. Returns list of dicts"""
         obras = Obra.query.filter_by(empresa_id=empresa_id).all()
-        lucro_obras = []
 
-        for obra in obras:
-            lancs_obra = Lancamento.query.filter(
-                Lancamento.obra_id == obra.id, Lancamento.empresa_id == empresa_id
+        if not obras:
+            return []
+
+        obra_ids = [o.id for o in obras]
+
+        query = db.session.query(
+            Lancamento.obra_id,
+            func.sum(case((Lancamento.tipo == 'Receita', Lancamento.valor), else_=0)).label(
+                'receita'
+            ),
+            func.sum(case((Lancamento.tipo == 'Despesa', Lancamento.valor), else_=0)).label(
+                'despesa'
+            ),
+        ).filter(
+            Lancamento.empresa_id == empresa_id,
+            Lancamento.obra_id.in_(obra_ids),
+        )
+
+        if data_inicio:
+            query = query.filter(
+                Lancamento.data >= datetime.strptime(data_inicio, '%Y-%m-%d').date()
             )
+        if data_fim:
+            query = query.filter(Lancamento.data <= datetime.strptime(data_fim, '%Y-%m-%d').date())
 
-            if data_inicio:
-                lancs_obra = lancs_obra.filter(
-                    Lancamento.data >= datetime.strptime(data_inicio, '%Y-%m-%d').date()
-                )
-            if data_fim:
-                lancs_obra = lancs_obra.filter(
-                    Lancamento.data <= datetime.strptime(data_fim, '%Y-%m-%d').date()
-                )
+        query = query.group_by(Lancamento.obra_id)
+        resultados = query.all()
 
-            lancamentos = lancs_obra.all()
-            receita = sum(l.valor for l in lancamentos if l.tipo == 'Receita')
-            despesa = sum(l.valor for l in lancamentos if l.tipo == 'Despesa')
+        resultados_dict = {
+            r.obra_id: {'receita': r.receita or 0, 'despesa': r.despesa or 0} for r in resultados
+        }
+
+        lucro_obras = []
+        for obra in obras:
+            dados = resultados_dict.get(obra.id, {'receita': 0, 'despesa': 0})
+            receita = dados['receita']
+            despesa = dados['despesa']
             saldo = receita - despesa
             margem = (saldo / receita) * 100 if receita > 0 else None
 
@@ -80,23 +109,43 @@ class RelatorioService:
 
     @staticmethod
     def calcular_evolucao_mensal(empresa_id, meses=12):
-        """Calculate monthly evolution. Returns list of dicts for last N months"""
-        evolucao_mensal = []
+        """Calculate monthly evolution using single SQL query. Returns list of dicts"""
+        hoje = date.today()
+        data_inicio = hoje.replace(day=1) - timedelta(days=(meses - 1) * 30)
 
-        for i in range(meses - 1, -1, -1):
-            mes = (date.today().replace(day=1) - timedelta(days=i * 30)).replace(day=1)
-            mes_fim = (mes + timedelta(days=32)).replace(day=1)
-
-            lancs_mes = Lancamento.query.filter(
+        query = (
+            db.session.query(
+                func.strftime('%Y-%m', Lancamento.data).label('ano_mes'),
+                func.sum(case((Lancamento.tipo == 'Receita', Lancamento.valor), else_=0)).label(
+                    'receita'
+                ),
+                func.sum(case((Lancamento.tipo == 'Despesa', Lancamento.valor), else_=0)).label(
+                    'despesa'
+                ),
+            )
+            .filter(
                 Lancamento.empresa_id == empresa_id,
-                Lancamento.data >= mes,
-                Lancamento.data < mes_fim,
-            ).all()
+                Lancamento.data >= data_inicio,
+            )
+            .group_by(func.strftime('%Y-%m', Lancamento.data))
+            .order_by(func.strftime('%Y-%m', Lancamento.data))
+        )
 
-            receita = sum(l.valor for l in lancs_mes if l.tipo == 'Receita')
-            despesa = sum(l.valor for l in lancs_mes if l.tipo == 'Despesa')
+        resultados = query.all()
+        resultados_dict = {
+            r.ano_mes: {'receita': r.receita or 0, 'despesa': r.despesa or 0} for r in resultados
+        }
 
+        evolucao_mensal = []
+        for i in range(meses):
+            mes = (date.today().replace(day=1) - timedelta(days=i * 30)).replace(day=1)
+            ano_mes = mes.strftime('%Y-%m')
             nome_mes = mes.strftime('%b/%Y')
+
+            dados = resultados_dict.get(ano_mes, {'receita': 0, 'despesa': 0})
+            receita = dados['receita']
+            despesa = dados['despesa']
+
             evolucao_mensal.append(
                 {
                     'mes': nome_mes,
@@ -106,12 +155,48 @@ class RelatorioService:
                 }
             )
 
+        evolucao_mensal.reverse()
         return evolucao_mensal
 
     @staticmethod
     def calcular_orcamento_vs_realizado(empresa_id, data_inicio=None, data_fim=None):
-        """Compare budget vs actual per project. Returns dict with data"""
+        """Compare budget vs actual per project using SQL. Returns dict with data"""
         obras = Obra.query.filter_by(empresa_id=empresa_id).all()
+
+        if not obras:
+            return {
+                'orcamento_obras': [],
+                'total_orcamento': 0,
+                'total_realizado': 0,
+                'diferenca_total': 0,
+                'percentual_geral': 0,
+                'grafico_labels': [],
+                'grafico_orcamento': [],
+                'grafico_realizado': [],
+            }
+
+        obra_ids = [o.id for o in obras]
+        obra_dict = {o.id: o for o in obras}
+
+        query = db.session.query(
+            Lancamento.obra_id,
+            func.sum(Lancamento.valor).label('realizado'),
+        ).filter(
+            Lancamento.empresa_id == empresa_id,
+            Lancamento.obra_id.in_(obra_ids),
+            Lancamento.tipo == 'Despesa',
+        )
+
+        if data_inicio:
+            query = query.filter(
+                Lancamento.data >= datetime.strptime(data_inicio, '%Y-%m-%d').date()
+            )
+        if data_fim:
+            query = query.filter(Lancamento.data <= datetime.strptime(data_fim, '%Y-%m-%d').date())
+
+        query = query.group_by(Lancamento.obra_id)
+        realizados = query.all()
+        realizados_dict = {r.obra_id: r.realizado or 0 for r in realizados}
 
         orcamento_obras = []
         total_orcamento = 0
@@ -120,24 +205,9 @@ class RelatorioService:
         grafico_orcamento = []
         grafico_realizado = []
 
-        for obra in obras:
-            lancs = Lancamento.query.filter(
-                Lancamento.obra_id == obra.id,
-                Lancamento.empresa_id == empresa_id,
-                Lancamento.tipo == 'Despesa',
-            )
-
-            if data_inicio:
-                lancs = lancs.filter(
-                    Lancamento.data >= datetime.strptime(data_inicio, '%Y-%m-%d').date()
-                )
-            if data_fim:
-                lancs = lancs.filter(
-                    Lancamento.data <= datetime.strptime(data_fim, '%Y-%m-%d').date()
-                )
-
-            lancamentos = lancs.all()
-            realizado = sum(l.valor for l in lancamentos)
+        for obra_id in obra_ids:
+            obra = obra_dict[obra_id]
+            realizado = realizados_dict.get(obra_id, 0)
             orcamento = obra.orcamento_previsto
             diferenca = orcamento - realizado
             percentual = (realizado / orcamento) * 100 if orcamento > 0 else 0
@@ -175,9 +245,12 @@ class RelatorioService:
 
     @staticmethod
     def calcular_despesas_por_categoria(empresa_id, data_inicio=None, data_fim=None):
-        """Calculate expenses by category. Returns list of dicts"""
+        """Calculate expenses by category using SQL. Returns list of dicts"""
         query = (
-            db.session.query(Lancamento.categoria, func.sum(Lancamento.valor).label('total'))
+            db.session.query(
+                Lancamento.categoria,
+                func.sum(Lancamento.valor).label('total'),
+            )
             .filter(Lancamento.empresa_id == empresa_id, Lancamento.tipo == 'Despesa')
             .group_by(Lancamento.categoria)
         )
@@ -190,14 +263,14 @@ class RelatorioService:
             query = query.filter(Lancamento.data <= datetime.strptime(data_fim, '%Y-%m-%d').date())
 
         categorias_db = query.all()
-        total_realizado = sum(c[1] for c in categorias_db)
+        total_realizado = sum(c.total for c in categorias_db)
 
         if total_realizado > 0:
             return [
                 {
-                    'categoria': c[0],
-                    'valor': c[1],
-                    'percentual': (c[1] / total_realizado) * 100,
+                    'categoria': c.categoria,
+                    'valor': c.total,
+                    'percentual': (c.total / total_realizado) * 100,
                 }
                 for c in categorias_db
             ]
@@ -205,7 +278,7 @@ class RelatorioService:
 
     @staticmethod
     def get_estatisticas_gerais(empresa_id):
-        """Get general statistics. Returns dict"""
+        """Get general statistics using optimized queries. Returns dict"""
         from app.constants import StatusObra
 
         obras_ativas = Obra.query.filter_by(
@@ -215,15 +288,10 @@ class RelatorioService:
         lancamentos_count = Lancamento.query.filter_by(empresa_id=empresa_id).count()
 
         categorias_count = (
-            len(
-                set(
-                    Lancamento.query.filter_by(empresa_id=empresa_id)
-                    .with_entities(Lancamento.categoria)
-                    .all()
-                )
-            )
-            if lancamentos_count > 0
-            else 0
+            db.session.query(func.count(func.distinct(Lancamento.categoria)))
+            .filter(Lancamento.empresa_id == empresa_id)
+            .scalar()
+            or 0
         )
 
         obras_por_status = (

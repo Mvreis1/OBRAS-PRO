@@ -23,7 +23,7 @@ class ContaBancaria(db.Model, SoftDeleteMixin):
     saldo_atual = db.Column(db.Float, default=0)
     ativo = db.Column(db.Boolean, default=True)
     observacoes = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
     lancamentos = db.relationship(
         'LancamentoConta', backref='conta', lazy='dynamic', cascade='all, delete-orphan'
@@ -57,7 +57,7 @@ class LancamentoConta(db.Model):
     data = db.Column(db.Date, nullable=False)
     documento = db.Column(db.String(100))
     categoria = db.Column(db.String(50))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
     def to_dict(self):
         return {

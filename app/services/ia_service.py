@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from app.config import OPENAI_API_KEY, GEMINI_API_KEY, CLAUDE_API_KEY
+from app.config import CLAUDE_API_KEY, GEMINI_API_KEY, OPENAI_API_KEY
 from app.models import ConfigIA
 from app.utils.ia import gerar_resposta, get_contexto_empresa
 
@@ -44,8 +44,8 @@ class IAService:
                 # Use local AI
                 return gerar_resposta(mensagem, contexto)
         except Exception as e:
-            print(f"ERRO IA CRITICO: {str(e)}")
-            return f"Ocorreu um erro interno ao processar sua solicitação: {str(e)}. Usando assistente local.\n\n" + gerar_resposta(mensagem, contexto)
+            print(f"ERRO IA CRITICO: {e!s}")
+            return f"Ocorreu um erro interno ao processar sua solicitação: {e!s}. Usando assistente local.\n\n" + gerar_resposta(mensagem, contexto)
 
     @staticmethod
     def _call_openai(mensagem: str, contexto: dict, modelo: str, config) -> str:
@@ -111,7 +111,7 @@ class IAService:
             return response.text
 
         except Exception as e:
-            return f'Erro no Gemini: {str(e)}. Usando assistente local.'
+            return f'Erro no Gemini: {e!s}. Usando assistente local.'
 
     @staticmethod
     def _call_claude(mensagem: str, contexto: dict, config) -> str:
@@ -141,7 +141,7 @@ class IAService:
             return message.content[0].text
 
         except Exception as e:
-            return f'Erro no Claude: {str(e)}. Usando assistente local.'
+            return f'Erro no Claude: {e!s}. Usando assistente local.'
 
     @staticmethod
     def _build_system_prompt(contexto: dict) -> str:

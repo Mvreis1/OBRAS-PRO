@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - {{ nome_sistema }}{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Toggle valores -->
+<div class="row mb-4">
+    <div class="col-12">
+        <button onclick="toggleValores()" class="btn btn-outline-secondary btn-sm" id="btnToggleValores" style="float: right;">
+            <i class="bi bi-eye-slash" id="iconToggleValores"></i> Esconder Valores
+        </button>
+    </div>
+</div>
+
+<style>
+.valor-mascarado { filter: blur(8px); user-select: none; transition: filter 0.3s; }
+.valor-mascarado.mostrar { filter: none; }
+</style>
+<script>
+function toggleValores() {
+    const valores = document.querySelectorAll('.valor-mascarado');
+    const btn = document.getElementById('btnToggleValores');
+    const icon = document.getElementById('iconToggleValores');
+    const escondido = btn.classList.contains('valores-escondidos');
+    valores.forEach(v => escondido ? v.classList.add('mostrar') : v.classList.remove('mostrar'));
+    if (escondido) {
+        btn.classList.remove('valores-escondidos');
+        icon.className = 'bi bi-eye-slash';
+        btn.innerHTML = '<i class="bi bi-eye-slash"></i> Esconder Valores';
+    } else {
+        btn.classList.add('valores-escondidos');
+        icon.className = 'bi bi-eye';
+        btn.innerHTML = '<i class="bi bi-eye"></i> Mostrar Valores';
+    }
+}
+</script>
+
+<!-- Alertas -->
+{% if alertas %}
+<div class="row mb-4">
+    {% if alertas_criticos %}
+    <div class="col-12">
+        <div class="alert" style="background: linear-gradient(135deg, rgba(239,68,68,0.15) 0%, rgba(239,68,68,0.05) 100%); border: 1px solid rgba(239,68,68,0.3); border-radius: 12px;">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-danger bg-opacity-25 p-2"><i class="bi bi-exclamation-octagon-fill text-danger fs-5"></i></div>
+                <div>
+                    <div class="fw-bold text-danger mb-1">ATENÇÃO: Obras com Risco Crítico</div>
+                    <div class="d-flex gap-3 flex-wrap">
+                        {% for a in alertas_criticos %}
+                        <a href="{{ url_for('main.obra_detalhe', obra_id=a.obra_id) }}" class="text-danger text-decoration-none small">
+                            <i class="bi bi-arrow-right"></i> {{ a.obra_nome }} - {{ a.mensagem }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Stats Cards Premium -->
+<div class="row mb-4 g-4">
+    <div class="col-md-3">
+        <div class="premium-card" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; box-shadow: 0 4px 20px rgba(99,102,241,0.3);">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="text-white-50 text-uppercase small fw-bold" style="font-size: 10px; letter-spacing: 1.5px;">Orçamento Total</div>
+                        <div class="text-white fw-bold" style="font-size: 24px; margin-top: 8px;">{{ orcamento_total|format_currency }}</div>
+                        <div class="text-white-50 small mt-2"><i class="bi bi-building me-1"></i>5 obras ativas</div>
+                    </div>
+                    <div class="rounded-circle bg-white bg-opacity-20 p-3"><i class="bi bi-wallet2 text-white fs-4"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="premium-card" style="background: linear-gradient(135deg, #f43f5e 0%, #fb7185 100%); border: none; box-shadow: 0 4px 20px rgba(244,63,94,0.3);">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="text-white-50 text-uppercase small fw-bold" style="font-size: 10px; letter-spacing: 1.5px;">Despesas do Mês</div>
+                        <div class="text-white fw-bold" style="font-size: 24px; margin-top: 8px;">{{ despesas_mes|format_currency }}</div>
+                        <div class="text-white-50 small mt-2"><i class="bi bi-arrow-up me-1"></i>+12% vs mês anterior</div>
+                    </div>
+                    <div class="rounded-circle bg-white bg-opacity-20 p-3"><i class="bi bi-arrow-down-circle text-white fs-4"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="premium-card" style="background: linear-gradient(135deg, #10b981 0%, #34d399 100%); border: none; box-shadow: 0 4px 20px rgba(16,185,129,0.3);">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="text-white-50 text-uppercase small fw-bold" style="font-size: 10px; letter-spacing: 1.5px;">Receitas do Mês</div>
+                        <div class="text-white fw-bold" style="font-size: 24px; margin-top: 8px;">{{ receitas_mes|format_currency }}</div>
+                        <div class="text-white-50 small mt-2"><i class="bi bi-arrow-up me-1"></i>+8% vs mês anterior</div>
+                    </div>
+                    <div class="rounded-circle bg-white bg-opacity-20 p-3"><i class="bi bi-arrow-up-circle text-white fs-4"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="premium-card" style="background: linear-gradient(135deg, {% if saldo_atual >= 0 %}#10b981{% else %}#f43f5e{% endif %} 0%, {% if saldo_atual >= 0 %}#34d399{% else %}#fb7185{% endif %} 100%); border: none; box-shadow: 0 4px 20px rgba({% if saldo_atual >= 0 %}16,185,129{% else %}244,63,94{% endif %},0.3);">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="text-white-50 text-uppercase small fw-bold" style="font-size: 10px; letter-spacing: 1.5px;">Saldo Atual</div>
+                        <div class="text-white fw-bold" style="font-size: 24px; margin-top: 8px;">{{ saldo_atual|format_currency }}</div>
+                        <div class="text-white-50 small mt-2">{% if saldo_atual >= 0 %}<i class="bi bi-check-circle me-1"></i>Saldo positivo{% else %}<i class="bi bi-exclamation-triangle me-1"></i>Atenção{% endif %}</div>
+                    </div>
+                    <div class="rounded-circle bg-white bg-opacity-20 p-3"><i class="bi bi-graph-up-arrow text-white fs-4"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row mb-4 g-4">
+    <div class="col-md-8">
+        <div class="premium-card">
+            <div class="card-header border-0 pb-0 bg-transparent">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-bar-chart-line me-2 text-primary"></i>Fluxo de Caixa</h5>
+                    <div class="d-flex gap-3">
+                        <span class="small text-muted"><span class="d-inline-block rounded-circle me-1" style="width:8px;height:8px;background:#10b981;"></span> Receitas</span>
+                        <span class="small text-muted"><span class="d-inline-block rounded-circle me-1" style="width:8px;height:8px;background:#f43f5e;"></span> Despesas</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body" style="height: 300px;">
+                <canvas id="fluxoCaixaChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="premium-card">
+            <div class="card-header border-0 pb-0 bg-transparent">
+                <h5 class="fw-bold mb-0"><i class="bi bi-pie-chart me-2 text-primary"></i>Despesas por Categoria</h5>
+            </div>
+            <div class="card-body" style="height: 300px;">
+                <canvas id="categoriaChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transactions & Works -->
+<div class="row g-4">
+    <div class="col-md-8">
+        <div class="premium-card">
+            <div class="card-header border-0 bg-transparent">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-clock-history me-2 text-primary"></i>Lançamentos Recentes</h5>
+                    <a href="{{ url_for('main.lancamentos') }}" class="btn btn-sm btn-outline-primary">Ver Todos</a>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="border-0">Data</th>
+                            <th class="border-0">Descrição</th>
+                            <th class="border-0">Obra</th>
+                            <th class="border-0">Categoria</th>
+                            <th class="border-0">Tipo</th>
+                            <th class="border-0 text-end">Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lancamento in ultimos_lancamentos %}
+                        <tr>
+                            <td class="text-muted small">{{ lancamento.data|format_date }}</td>
+                            <td class="fw-medium">{{ lancamento.descricao }}</td>
+                            <td><span class="badge bg-primary-subtle text-primary" style="font-size:10px;">{{ lancamento.obra.nome[:12] if lancamento.obra else 'N/A' }}</span></td>
+                            <td class="text-muted small">{{ lancamento.categoria }}</td>
+                            <td><span class="badge bg-{% if lancamento.tipo == 'Receita' %}success{% else %}danger{% endif %}-subtle text-{% if lancamento.tipo == 'Receita' %}success{% else %}danger{% endif %}" style="font-size:10px;">{{ lancamento.tipo }}</span></td>
+                            <td class="text-end fw-bold text-{% if lancamento.tipo == 'Receita' %}success{% else %}danger{% endif %}">{% if lancamento.tipo == 'Receita' %}+{% else %}-{% endif %}{{ lancamento.valor|format_currency }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="6" class="text-center py-4 text-muted">Nenhum lançamento encontrado</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Obras em Andamento -->
+        <div class="premium-card mb-4">
+            <div class="card-header border-0 bg-transparent">
+                <h5 class="fw-bold mb-0"><i class="bi bi-building me-2 text-primary"></i>Obras em Andamento</h5>
+            </div>
+            <div class="card-body">
+                {% for obra in obras[:5] %}
+                <div class="mb-3 pb-3 border-bottom">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="fw-medium">{{ obra.nome[:20] }}</span>
+                        <span class="badge bg-{% if obra.status == 'Em Execução' %}primary{% elif obra.status == 'Concluída' %}success{% else %}warning{% endif %}">{{ obra.progresso }}%</span>
+                    </div>
+                    <div class="progress" style="height: 6px; border-radius: 4px;">
+                        <div class="progress-bar" style="width: {{ obra.progresso }}%; background: {% if obra.progresso < 30 %}#f43f5e{% elif obra.progresso < 70 %}#f59e0b{% else %}#10b981{% endif %}; border-radius: 4px;"></div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-2 small text-muted">
+                        <span>{{ obra.status }}</span>
+                        <span>{{ obra.orcamento_previsto|format_currency }}</span>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-center text-muted">Nenhuma obra encontrada</p>
+                {% endfor %}
+                <a href="{{ url_for('main.obras') }}" class="btn btn-outline-primary w-100 mt-2"><i class="bi bi-arrow-right me-2"></i>Ver todas as obras</a>
+            </div>
+        </div>
+        
+        <!-- Ações Rápidas -->
+        <div class="premium-card">
+            <div class="card-header border-0 bg-transparent">
+                <h5 class="fw-bold mb-0"><i class="bi bi-lightning me-2 text-warning"></i>Ações Rápidas</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-6"><a href="{{ url_for('main.nova_obra') }}" class="btn btn-primary w-100"><i class="bi bi-plus-lg me-1"></i>Nova Obra</a></div>
+                    <div class="col-6"><a href="{{ url_for('main.novo_lancamento') }}" class="btn btn-success w-100"><i class="bi bi-plus-lg me-1"></i>Lançamento</a></div>
+                    <div class="col-6"><a href="{{ url_for('banco.bancos') }}" class="btn btn-outline-secondary w-100"><i class="bi bi-bank me-1"></i>Bancos</a></div>
+                    <div class="col-6"><a href="{{ url_for('ia.assistente') }}" class="btn btn-outline-secondary w-100"><i class="bi bi-robot me-1"></i>IA</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const fluxoCaixaCtx = document.getElementById('fluxoCaixaChart').getContext('2d');
+new Chart(fluxoCaixaCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ dados_grafico_mes|map(attribute='mes')|list|tojson }},
+        datasets: [
+            {label: 'Receitas', data: {{ dados_grafico_mes|map(attribute='receita')|list|tojson }}, backgroundColor: '#10b981', borderRadius: 6},
+            {label: 'Despesas', data: {{ dados_grafico_mes|map(attribute='despesa')|list|tojson }}, backgroundColor: '#f43f5e', borderRadius: 6}
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {display: false},
+            tooltip: {callbacks: {label: function(c) {return c.dataset.label + ': R$ ' + c.raw.toLocaleString('pt-BR')}}
+        },
+        scales: {
+            y: {beginAtZero: true, grid: {color: '#e5e7eb'}, ticks: {color: '#6b7280', callback: function(v) {return 'R$ ' + (v/1000).toFixed(0) + 'k'}}},
+            x: {grid: {display: false}, ticks: {color: '#6b7280'}}
+        }
+    }
+});
+
+const categoriaCtx = document.getElementById('categoriaChart').getContext('2d');
+new Chart(categoriaCtx, {
+    type: 'doughnut',
+    data: {
+        labels: {{ dados_pizza|map(attribute='categoria')|list|tojson }},
+        datasets: [{
+            data: {{ dados_pizza|map(attribute='valor')|list|tojson }},
+            backgroundColor: ['#6366f1','#8b5cf6','#a78bfa','#c4b5fd','#f43f5e','#fb7185','#fda4af','#10b981','#34d399','#6ee7b7'],
+            borderWidth: 0,
+            hoverOffset: 10
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: {legend: {position: 'bottom', labels: {color: '#6b7280', boxWidth: 10, padding: 8, font: {size: 10}}}}
+    }
+});
+</script>
+{% endblock %}
