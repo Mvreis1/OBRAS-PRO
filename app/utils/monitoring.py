@@ -6,11 +6,68 @@ import time
 from datetime import datetime
 
 import psutil
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, Response
 
 from app.routes.auth import login_required
 
 monitor_bp = Blueprint('monitor', __name__)
+
+
+@monitor_bp.route('/metrics')
+@login_required
+def prometheus_metrics():
+    """Endpoint para métricas Prometheus"""
+    from prometheus_client import Counter, Gauge, generate_latest
+
+    requests_total = Counter(
+        'http_requests_total', 'Total HTTP requests', ['method', 'endpoint', 'status']
+    )
+    active_users = Gauge('active_users', 'Active users')
+    active_obras = Gauge('active_obras', 'Active obras')
+    active_empresas = Gauge('active_empresas', 'Active empresas')
+
+    try:
+        from app.models import Empresa, Obra, Usuario
+
+        active_users.set(Usuario.query.filter_by(ativo=True).count())
+        active_obras.set(Obra.query.filter_by(ativo=True).count())
+        active_empresas.set(Empresa.query.filter_by(ativo=True).count())
+    except Exception:
+        pass
+
+    return Response(generate_latest(), mimetype='text/plain')
+
+
+def init_monitoring(app):
+    """Inicializa monitoramento (Sentry + Prometheus)"""
+    from app.config import PROMETHEUS_ENABLED, SENTRY_DSN
+
+    # Sentry
+    if SENTRY_DSN:
+        try:
+            import sentry_sdk
+            from sentry_sdk.integrations.flask import FlaskIntegration
+
+            sentry_sdk.init(
+                dsn=SENTRY_DSN,
+                integrations=[FlaskIntegration()],
+                traces_sample_rate=0.1,
+                environment=app.config.get('FLASK_ENV', 'development'),
+            )
+            app.logger.info('Sentry initialized')
+        except Exception as e:
+            app.logger.warning(f'Sentry nao inicializado: {e}')
+
+    # Prometheus
+    if PROMETHEUS_ENABLED:
+        try:
+            from prometheus_client import start_http_server
+
+            port = app.config.get('PROMETHEUS_PORT', 9090)
+            start_http_server(port)
+            app.logger.info(f'Prometheus metrics server started on port {port}')
+        except Exception as e:
+            app.logger.warning(f'Prometheus nao inicializado: {e}')
 
 
 class MetricsCollector:
@@ -98,7 +155,7 @@ def health_check():
     return jsonify(
         {
             'status': 'ok' if db_status == 'healthy' else 'degraded',
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now().isoformat(),
             'services': {'database': db_status, 'api': 'ok'},
         }
     )
@@ -128,7 +185,7 @@ def healthz():
     return jsonify(
         {
             'status': 'ok' if db_status == 'healthy' else 'degraded',
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now().isoformat(),
             'services': {'database': db_status, 'api': 'ok'},
         }
     ), 200
@@ -150,7 +207,7 @@ def metrics():
         {
             'system': MetricsCollector.get_system_metrics(),
             'app': MetricsCollector.get_app_metrics(),
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now().isoformat(),
         }
     )
 
@@ -168,7 +225,7 @@ def request_metrics():
         description: Métricas de requests
     """
     return jsonify(
-        {'stats': MetricsCollector.get_request_stats(), 'timestamp': datetime.utcnow().isoformat()}
+        {'stats': MetricsCollector.get_request_stats(), 'timestamp': datetime.now().isoformat()}
     )
 
 
@@ -193,7 +250,7 @@ def database_metrics():
         return jsonify(
             {
                 'tables': {'obras': result[0] if result else 0},
-                'timestamp': datetime.utcnow().isoformat(),
+                'timestamp': datetime.now().isoformat(),
             }
         )
     except Exception as e:
@@ -202,12 +259,40 @@ def database_metrics():
 
 # Middleware para trackar tempo de request
 def init_monitoring(app):
-    """Inicializa monitoramento na app"""
+    """Inicializa monitoramento na app (Sentry + Prometheus)"""
     from flask import g
+    from app.config import PROMETHEUS_ENABLED, SENTRY_DSN
 
     @app.before_request
     def start_timer():
         g.request_start = time.time()
+
+    # Sentry
+    if SENTRY_DSN:
+        try:
+            import sentry_sdk
+            from sentry_sdk.integrations.flask import FlaskIntegration
+
+            sentry_sdk.init(
+                dsn=SENTRY_DSN,
+                integrations=[FlaskIntegration()],
+                traces_sample_rate=0.1,
+                environment=app.config.get('FLASK_ENV', 'development'),
+            )
+            app.logger.info('Sentry initialized')
+        except Exception as e:
+            app.logger.warning(f'Sentry nao inicializado: {e}')
+
+    # Prometheus
+    if PROMETHEUS_ENABLED:
+        try:
+            from prometheus_client import start_http_server
+
+            port = app.config.get('PROMETHEUS_PORT', 9090)
+            start_http_server(port)
+            app.logger.info(f'Prometheus metrics server started on port {port}')
+        except Exception as e:
+            app.logger.warning(f'Prometheus nao inicializado: {e}')
 
     # Registrar blueprint
     app.register_blueprint(monitor_bp, url_prefix='/monitor')

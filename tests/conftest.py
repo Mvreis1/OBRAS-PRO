@@ -18,29 +18,13 @@ def app():
     os.environ['SECRET_KEY'] = 'test-secret-key'
     os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
 
-    # Desabilitar CSRF para testes
     app = create_app()
-    app.config.update(
-        {
-            'TESTING': True,
-            'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
-            'SQLALCHEMY_ECHO': False,
-            'WTF_CSRF_ENABLED': False,
-            'SECRET_KEY': 'test-secret-key',
-        }
-    )
+    app.config['TESTING'] = True
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+    app.config['SQLALCHEMY_ECHO'] = False
+    app.config['WTF_CSRF_ENABLED'] = False
 
-    with app.app_context():
-        db.create_all()
-
-        # Seed RBAC
-        seed_permissoes()
-        seed_roles()
-
-        yield app
-
-        db.session.remove()
-        db.drop_all()
+    yield app
 
 
 @pytest.fixture
@@ -58,68 +42,72 @@ def runner(app):
 @pytest.fixture
 def admin_user(app):
     """Cria empresa e usuario admin para testes"""
+    with app.app_context():
+        from app.models import Empresa, Usuario
 
-    from app.models import Empresa, Usuario
+        empresa = Empresa(
+            nome='Empresa Teste',
+            slug='empresa-teste',
+            cnpj='12345678000190',
+            email='teste@empresa.com',
+            plano='free',
+            max_usuarios=10,
+            max_obras=50,
+        )
+        db.session.add(empresa)
+        db.session.flush()
 
-    empresa = Empresa(
-        nome='Empresa Teste',
-        slug='empresa-teste',
-        cnpj='12345678000190',
-        email='teste@empresa.com',
-        plano='free',
-        max_usuarios=10,
-        max_obras=50,
-    )
-    db.session.add(empresa)
-    db.session.flush()
+        admin_role = Role.query.filter_by(nome='Administrador', is_system=True).first()
 
-    admin_role = Role.query.filter_by(nome='Administrador', is_system=True).first()
+        usuario = Usuario(
+            empresa_id=empresa.id,
+            nome='Admin Teste',
+            email='admin@teste.com',
+            username='admin',
+            cargo='Administrador',
+            role='admin',
+            role_id=admin_role.id if admin_role else None,
+        )
+        usuario.set_senha('admin123')
+        db.session.add(usuario)
+        db.session.commit()
 
-    usuario = Usuario(
-        empresa_id=empresa.id,
-        nome='Admin Teste',
-        email='admin@teste.com',
-        username='admin',
-        cargo='Administrador',
-        role='admin',
-        role_id=admin_role.id if admin_role else None,
-    )
-    usuario.set_senha('admin123')
-    db.session.add(usuario)
-    db.session.commit()
-
-    return usuario
+        return usuario
 
 
 @pytest.fixture
 def viewer_user(app):
     """Cria usuario viewer para testes de permissao"""
-    from app.models import Empresa, Usuario
+    with app.app_context():
+        from app.models import Empresa, Usuario
 
-    empresa = Empresa.query.first()
-    if not empresa:
-        empresa = Empresa(
-            nome='Empresa Viewer', slug='empresa-viewer', email='viewer@empresa.com', plano='free'
+        empresa = Empresa.query.first()
+        if not empresa:
+            empresa = Empresa(
+                nome='Empresa Viewer',
+                slug='empresa-viewer',
+                email='viewer@empresa.com',
+                plano='free',
+            )
+            db.session.add(empresa)
+            db.session.flush()
+
+        viewer_role = Role.query.filter_by(nome='Visitante', is_system=True).first()
+
+        usuario = Usuario(
+            empresa_id=empresa.id,
+            nome='Viewer Teste',
+            email='viewer@teste.com',
+            username='viewer',
+            cargo='Visitante',
+            role='viewer',
+            role_id=viewer_role.id if viewer_role else None,
         )
-        db.session.add(empresa)
-        db.session.flush()
+        usuario.set_senha('viewer123')
+        db.session.add(usuario)
+        db.session.commit()
 
-    viewer_role = Role.query.filter_by(nome='Visitante', is_system=True).first()
-
-    usuario = Usuario(
-        empresa_id=empresa.id,
-        nome='Viewer Teste',
-        email='viewer@teste.com',
-        username='viewer',
-        cargo='Visitante',
-        role='viewer',
-        role_id=viewer_role.id if viewer_role else None,
-    )
-    usuario.set_senha('viewer123')
-    db.session.add(usuario)
-    db.session.commit()
-
-    return usuario
+        return usuario
 
 
 @pytest.fixture

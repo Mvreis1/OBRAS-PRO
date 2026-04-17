@@ -24,9 +24,7 @@ class TestAuthService:
     def test_authenticate_sucesso(self, app, admin_user):
         """Autenticação bem-sucedida"""
         with app.app_context():
-            usuario, empresa, error = AuthService.authenticate(
-                'admin@teste.com', 'admin123'
-            )
+            usuario, empresa, error = AuthService.authenticate('admin@teste.com', 'admin123')
 
             assert usuario is not None
             assert empresa is not None
@@ -36,9 +34,7 @@ class TestAuthService:
     def test_authenticate_senha_invalida(self, app, admin_user):
         """Autenticação com senha errada"""
         with app.app_context():
-            usuario, empresa, error = AuthService.authenticate(
-                'admin@teste.com', 'senhaerrada'
-            )
+            usuario, empresa, error = AuthService.authenticate('admin@teste.com', 'senhaerrada')
 
             assert usuario is None
             assert empresa is None
@@ -48,9 +44,7 @@ class TestAuthService:
     def test_authenticate_email_inexistente(self, app):
         """Autenticação com email que não existe"""
         with app.app_context():
-            usuario, empresa, error = AuthService.authenticate(
-                'naoexiste@teste.com', 'qualquer'
-            )
+            usuario, empresa, error = AuthService.authenticate('naoexiste@teste.com', 'qualquer')
 
             assert usuario is None
             assert empresa is None
@@ -64,9 +58,7 @@ class TestAuthService:
             usuario.bloqueado_ate = datetime.utcnow() + timedelta(minutes=15)
             db.session.commit()
 
-            usuario, empresa, error = AuthService.authenticate(
-                'admin@teste.com', 'admin123'
-            )
+            usuario, _, error = AuthService.authenticate('admin@teste.com', 'admin123')
 
             assert usuario is None
             assert 'bloqueada' in error.lower()
@@ -78,9 +70,7 @@ class TestAuthService:
             usuario.ativo = False
             db.session.commit()
 
-            usuario, empresa, error = AuthService.authenticate(
-                'admin@teste.com', 'admin123'
-            )
+            usuario, _, _ = AuthService.authenticate('admin@teste.com', 'admin123')
 
             assert usuario is None
 
@@ -102,13 +92,13 @@ class TestEmpresaService:
 
     def test_validar_slug_vazio(self):
         """Validação de slug vazio"""
-        valid, error = EmpresaService.validar_slug('')
+        valid, _ = EmpresaService.validar_slug('')
         assert valid is False
 
     def test_verificar_slug_disponivel(self, app, admin_user):
         """Verificar slug disponível"""
         with app.app_context():
-            available, error = EmpresaService.verificar_slug_disponivel('slug-novo')
+            available, _ = EmpresaService.verificar_slug_disponivel('slug-novo')
             assert available is True
 
     def test_verificar_slug_duplicado(self, app, admin_user):
@@ -203,7 +193,7 @@ class TestObraService:
 
             obra, _ = ObraService.criar_obra(empresa_id, {'nome': 'Obra Para Excluir'})
 
-            success, error = ObraService.excluir_obra(obra.id, empresa_id)
+            success, _ = ObraService.excluir_obra(obra.id, empresa_id)
 
             assert success is True
             assert Obra.query.get(obra.id) is None
@@ -358,12 +348,12 @@ class TestLancamentoService:
         """Criar lançamento financeiro"""
         with app.app_context():
             empresa_id = admin_user.empresa_id
-            
+
             # Cria obra primeiro
             obra = Obra(empresa_id=empresa_id, nome='Obra Teste Lancamento', status='Em Execução')
             db.session.add(obra)
             db.session.commit()
-            
+
             dados = {
                 'descricao': 'Lançamento Teste',
                 'tipo': 'Receita',
@@ -400,7 +390,7 @@ class TestLancamentoService:
         """Editar lançamento"""
         with app.app_context():
             empresa_id = admin_user.empresa_id
-            
+
             # Cria obra primeiro
             obra = Obra(empresa_id=empresa_id, nome='Obra Editar Service', status='Em Execução')
             db.session.add(obra)
@@ -437,7 +427,7 @@ class TestLancamentoService:
         """Construir query com filtros"""
         with app.app_context():
             empresa_id = admin_user.empresa_id
-            
+
             # Cria obra primeiro
             obra = Obra(empresa_id=empresa_id, nome='Obra Filtros Service', status='Em Execução')
             db.session.add(obra)
@@ -447,18 +437,28 @@ class TestLancamentoService:
             db.session.add_all(
                 [
                     Lancamento(
-                        empresa_id=empresa_id, obra_id=obra.id, descricao='Receita 1', categoria='Vendas', tipo='Receita', valor=1000, data=date(2026, 4, 1)
+                        empresa_id=empresa_id,
+                        obra_id=obra.id,
+                        descricao='Receita 1',
+                        categoria='Vendas',
+                        tipo='Receita',
+                        valor=1000,
+                        data=date(2026, 4, 1),
                     ),
                     Lancamento(
-                        empresa_id=empresa_id, obra_id=obra.id, descricao='Despesa 1', categoria='Materiais', tipo='Despesa', valor=500, data=date(2026, 4, 5)
+                        empresa_id=empresa_id,
+                        obra_id=obra.id,
+                        descricao='Despesa 1',
+                        categoria='Materiais',
+                        tipo='Despesa',
+                        valor=500,
+                        data=date(2026, 4, 5),
                     ),
                 ]
             )
             db.session.commit()
 
-            query = LancamentoService.build_filtered_query(
-                empresa_id, {'tipo': 'Receita'}
-            )
+            query = LancamentoService.build_filtered_query(empresa_id, {'tipo': 'Receita'})
             results = query.all()
 
             assert len(results) == 1
@@ -472,7 +472,7 @@ class TestRelatorioService:
         """Relatório geral financeiro"""
         with app.app_context():
             empresa_id = admin_user.empresa_id
-            
+
             # Cria obra
             obra = Obra(empresa_id=empresa_id, nome='Obra Relatorio', status='Em Execução')
             db.session.add(obra)
@@ -480,8 +480,24 @@ class TestRelatorioService:
 
             db.session.add_all(
                 [
-                    Lancamento(empresa_id=empresa_id, obra_id=obra.id, descricao='Receita 1', categoria='Vendas', tipo='Receita', valor=50000, data=date(2026, 4, 1)),
-                    Lancamento(empresa_id=empresa_id, obra_id=obra.id, descricao='Despesa 1', categoria='Materiais', tipo='Despesa', valor=30000, data=date(2026, 4, 5)),
+                    Lancamento(
+                        empresa_id=empresa_id,
+                        obra_id=obra.id,
+                        descricao='Receita 1',
+                        categoria='Vendas',
+                        tipo='Receita',
+                        valor=50000,
+                        data=date(2026, 4, 1),
+                    ),
+                    Lancamento(
+                        empresa_id=empresa_id,
+                        obra_id=obra.id,
+                        descricao='Despesa 1',
+                        categoria='Materiais',
+                        tipo='Despesa',
+                        valor=30000,
+                        data=date(2026, 4, 5),
+                    ),
                 ]
             )
             db.session.commit()
@@ -538,7 +554,7 @@ class TestRelatorioService:
         """Evolução mensal"""
         with app.app_context():
             empresa_id = admin_user.empresa_id
-            
+
             # Cria obra
             obra = Obra(empresa_id=empresa_id, nome='Obra Evolucao', status='Em Execução')
             db.session.add(obra)
@@ -570,7 +586,7 @@ class TestRelatorioService:
         """Despesas por categoria"""
         with app.app_context():
             empresa_id = admin_user.empresa_id
-            
+
             # Cria obra
             obra = Obra(empresa_id=empresa_id, nome='Obra Categorias', status='Em Execução')
             db.session.add(obra)
@@ -652,13 +668,15 @@ class TestOrcamentoService:
             db.session.add(orcamento)
             db.session.commit()
 
-            novo_orcamento, error = OrcamentoService.duplicar_orcamento(
-                orcamento.id, empresa_id
-            )
+            novo_orcamento, error = OrcamentoService.duplicar_orcamento(orcamento.id, empresa_id)
 
             assert error is None
             assert novo_orcamento is not None
-            assert 'Cópia' in novo_orcamento.titulo or 'Cópia' in novo_orcamento.descricao or orcamento.valor_total == novo_orcamento.valor_total
+            assert (
+                'Cópia' in novo_orcamento.titulo
+                or 'Cópia' in novo_orcamento.descricao
+                or orcamento.valor_total == novo_orcamento.valor_total
+            )
 
 
 class TestAuditService:
@@ -669,13 +687,13 @@ class TestAuditService:
         with app.app_context():
             # Clear any pending session state from previous tests
             db.session.rollback()
-            
+
             # Use test client with session to ensure session variables are available
             with app.test_client() as client:
                 with client.session_transaction() as sess:
                     sess['usuario_id'] = admin_user.id
                     sess['empresa_id'] = admin_user.empresa_id
-                
+
                 # Make a request to ensure session is active when calling log
                 # The session persists for all requests within the test_client context
                 with client.get('/'):

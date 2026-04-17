@@ -51,6 +51,17 @@ MAIL_USERNAME = config('MAIL_USERNAME', default='')
 MAIL_PASSWORD = config('MAIL_PASSWORD', default='')
 MAIL_DEFAULT_SENDER = config('MAIL_DEFAULT_SENDER', default='noreply@obraspro.com.br')
 
+# Redis Cache
+REDIS_URL = config('REDIS_URL', default='redis://localhost:6379/0')
+CACHE_DEFAULT_TIMEOUT = config('CACHE_DEFAULT_TIMEOUT', default=300, cast=int)
+
+# Prometheus Metrics
+PROMETHEUS_ENABLED = config('PROMETHEUS_ENABLED', default=False, cast=bool)
+PROMETHEUS_PORT = config('PROMETHEUS_PORT', default=9090, cast=int)
+
+# Sentry (Error Tracking)
+SENTRY_DSN = config('SENTRY_DSN', default='')
+
 CATEGORIAS_DESPESA = [
     'Materiais de Construção',
     'Mão de Obra',

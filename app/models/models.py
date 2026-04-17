@@ -10,6 +10,11 @@ from werkzeug.security import check_password_hash, generate_password_hash
 db = SQLAlchemy()
 
 
+def init_db(app):
+    """Inicializa SQLAlchemy com app"""
+    db.init_app(app)
+
+
 class SoftDeleteMixin:
     """Mixin para soft delete - adiciona campo deleted_at"""
 
@@ -17,7 +22,7 @@ class SoftDeleteMixin:
 
     def soft_delete(self):
         """Marca registro como excluído"""
-        self.deleted_at = datetime.utcnow()
+        self.deleted_at = datetime.now()
 
     def restore(self):
         """Restaura registro excluído"""
@@ -48,8 +53,8 @@ class Empresa(db.Model):
     ativo = db.Column(db.Boolean, default=True)
     trial_ativo = db.Column(db.Boolean, default=True)
     trial_expira = db.Column(db.Date)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
     usuarios = db.relationship('Usuario', backref='empresa', lazy='dynamic')
     obras = db.relationship('Obra', backref='empresa', lazy='dynamic')
@@ -95,10 +100,15 @@ class Usuario(db.Model):
     # Password recovery
     token_recuperacao = db.Column(db.String(64), nullable=True)
     token_expiry = db.Column(db.DateTime, nullable=True)
+
+    __table_args__ = (
+        db.Index('idx_usuario_empresa_email', 'empresa_id', 'email'),
+        db.Index('idx_usuario_empresaUsername', 'empresa_id', 'username'),
+    )
     tentativas_login = db.Column(db.Integer, default=0)
     bloqueado_ate = db.Column(db.DateTime, nullable=True)
 
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
     __table_args__ = (
         db.UniqueConstraint('empresa_id', 'username', name='unique_username_empresa'),
@@ -267,8 +277,8 @@ class Obra(db.Model, SoftDeleteMixin):
     responsavel = db.Column(db.String(100))
     cliente = db.Column(db.String(200))
     imagem = db.Column(db.String(500))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
     lancamentos = db.relationship(
         'Lancamento', backref='obra', lazy='dynamic', cascade='all, delete-orphan'
@@ -362,7 +372,7 @@ class Lancamento(db.Model, SoftDeleteMixin):
     parcelas = db.Column(db.Integer, default=1)
     observacoes = db.Column(db.Text)
     documento = db.Column(db.String(100))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
     __table_args__ = (
         db.Index('idx_lancamento_empresa_data', 'empresa_id', 'data'),
@@ -401,7 +411,7 @@ class LogAtividade(db.Model):
     entidade_id = db.Column(db.Integer)
     detalhes = db.Column(db.Text)
     ip = db.Column(db.String(50))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.now, index=True)
 
     usuario = db.relationship('Usuario', backref='logs')
 
@@ -454,8 +464,8 @@ class ConfigIA(db.Model):
     claude_api_key = db.Column(db.String(500), nullable=True)
     ia_padrao = db.Column(db.String(50), default='local')
     ativo = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
     empresa = db.relationship('Empresa', backref='config_ia', lazy='select')
 

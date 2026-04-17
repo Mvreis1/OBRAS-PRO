@@ -16,18 +16,25 @@ from flask import (
     session,
     url_for,
 )
-
 from app.constants import StatusObra
 from app.models import ConfigIA, Empresa, Lancamento, LogAtividade, Obra, db
 from app.routes.auth import login_required
 from app.services.audit_service import AuditService
+from app.services.dashboard_service import DashboardService
+from app.services.lancamento_service import LancamentoService
 from app.services.obra_alerta_service import ObraAlertaService
+from app.services.obra_service import ObraService
 from app.services.relatorio_service import RelatorioService
 from app.services.storage_service import StorageService
 from app.utils.excel_export import ExcelExport
 from app.utils.sanitize import sanitize_float, sanitize_int
 
 main_bp = Blueprint('main', __name__)
+
+
+def invalidate_dashboard_cache(empresa_id):
+    """Invalidar cache do dashboard quando dados mudam"""
+    current_app.cache.delete(f'dashboard:{empresa_id}')
 
 
 @main_bp.route('/')
@@ -39,34 +46,24 @@ def index():
 @main_bp.route('/dashboard')
 @login_required
 def dashboard():
-    """Dashboard simplificado para evitar timeouts no Render"""
+    """Dashboard usando DashboardService com cache"""
     empresa_id = session.get('empresa_id')
+    cache_key = f'dashboard:{empresa_id}'
 
-    # Queries otimizadas com limites
+    # Verificar cache primeiro
+    cached_data = current_app.cache.get(cache_key)
+    if cached_data:
+        return render_template('main/dashboard.html', **cached_data)
+
+    # Obter dados do dashboard via service
+    resumo = DashboardService.get_dashboard_resumo(empresa_id)
+    dados_grafico = DashboardService.get_dashboard_chart_data(empresa_id, meses=12)
+
+    # Obras recentes para listagem
     obras = Obra.query.filter_by(empresa_id=empresa_id).limit(10).all()
-
     orcamento_total = sum(o.orcamento_previsto for o in obras)
 
-    # Usar SQL direto para agregacoes - mais rapido
-    from sqlalchemy import case, func
-
-    result = (
-        db.session.query(
-            func.sum(case((Lancamento.tipo == 'Despesa', Lancamento.valor), else_=0)).label(
-                'despesas'
-            ),
-            func.sum(case((Lancamento.tipo == 'Receita', Lancamento.valor), else_=0)).label(
-                'receitas'
-            ),
-        )
-        .filter(Lancamento.empresa_id == empresa_id)
-        .first()
-    )
-
-    despesas_mes = result.despesas or 0
-    receitas_mes = result.receitas or 0
-    saldo_atual = receitas_mes - despesas_mes
-
+    # Últimos lançamentos
     ultimos_lancamentos = (
         Lancamento.query.filter_by(empresa_id=empresa_id)
         .order_by(Lancamento.data.desc())
@@ -74,30 +71,28 @@ def dashboard():
         .all()
     )
 
-    # Dados simplificados para grafico
-    dados_grafico_mes = [
-        {'mes': 'Jan/2026', 'despesa': despesas_mes * 0.8, 'receita': receitas_mes * 0.9}
-    ]
-    dados_pizza = [{'categoria': 'Geral', 'valor': despesas_mes}]
+    # Alertas
+    alertas_criticos = resumo.get('obras_atrasadas', []) + resumo.get('obras_estouradas', [])
 
-    alertas = []
-    alertas_criticos = []
-    alertas_alertas = []
+    # Preparar dados para cache
+    template_data = {
+        'orcamento_total': orcamento_total,
+        'despesas_mes': resumo['total_despesas'],
+        'receitas_mes': resumo['total_receitas'],
+        'saldo_atual': resumo['saldo'],
+        'obras': obras,
+        'ultimos_lancamentos': ultimos_lancamentos,
+        'dados_grafico_mes': dados_grafico,
+        'dados_pizza': resumo.get('despesas_por_categoria', []),
+        'alertas': [],
+        'alertas_criticos': alertas_criticos,
+        'alertas_alertas': [],
+    }
 
-    return render_template(
-        'main/dashboard.html',
-        orcamento_total=orcamento_total,
-        despesas_mes=despesas_mes,
-        receitas_mes=receitas_mes,
-        saldo_atual=saldo_atual,
-        obras=obras,
-        ultimos_lancamentos=ultimos_lancamentos,
-        dados_grafico_mes=dados_grafico_mes,
-        dados_pizza=dados_pizza,
-        alertas=alertas,
-        alertas_criticos=alertas_criticos,
-        alertas_alertas=alertas_alertas,
-    )
+    # Armazenar no cache (5 minutos)
+    current_app.cache.set(cache_key, template_data, timeout=300)
+
+    return render_template('main/dashboard.html', **template_data)
 
 
 @main_bp.route('/obras')
@@ -128,101 +123,60 @@ def obras():
 @main_bp.route('/obra/<int:obra_id>')
 @login_required
 def obra_detalhe(obra_id):
+    """Detalhes da obra usando DashboardService"""
     empresa_id = session.get('empresa_id')
     obra = Obra.query.filter_by(id=obra_id, empresa_id=empresa_id).first_or_404()
-    lancamentos = (
-        Lancamento.query.filter_by(obra_id=obra_id, empresa_id=empresa_id)
-        .order_by(Lancamento.data.desc())
-        .all()
-    )
 
-    total_despesas = sum(l.valor for l in lancamentos if l.tipo == 'Despesa')
-    total_receitas = sum(l.valor for l in lancamentos if l.tipo == 'Receita')
-
-    categorias = (
-        db.session.query(Lancamento.categoria, db.func.sum(Lancamento.valor))
-        .filter(Lancamento.obra_id == obra_id, Lancamento.tipo == 'Despesa')
-        .group_by(Lancamento.categoria)
-        .all()
-    )
-
-    dados_obra = {
-        'orcamento': obra.orcamento_previsto,
-        'gasto': total_despesas,
-        'receita': total_receitas,
-        'saldo': total_receitas - total_despesas,
-        'percentual': (total_despesas / obra.orcamento_previsto * 100)
-        if obra.orcamento_previsto > 0
-        else 0,
-        'percentual_receita': (total_receitas / obra.orcamento_previsto * 100)
-        if obra.orcamento_previsto > 0
-        else 0,
-    }
+    # Usar service para dados agregados
+    obra_data = DashboardService.get_obra_dashboard_data(obra_id, empresa_id)
 
     return render_template(
         'main/obra_detalhe.html',
         obra=obra,
-        lancamentos=lancamentos,
-        total_despesas=total_despesas,
-        total_receitas=total_receitas,
-        categorias=categorias,
-        dados_obra=dados_obra,
+        lancamentos=obra_data.get('lancamentos', []),
+        total_despesas=obra_data.get('total_despesas', 0),
+        total_receitas=obra_data.get('total_receitas', 0),
+        categorias=obra_data.get('despesas_por_categoria', []),
+        dados_obra=obra_data.get('dados_obra', {}),
     )
 
 
 @main_bp.route('/obra/nova', methods=['GET', 'POST'])
 @login_required
 def nova_obra():
+    """Criar nova obra usando ObraService"""
     empresa_id = session.get('empresa_id')
-    empresa = db.session.get(Empresa, empresa_id)
 
-    if not empresa:
-        flash('Empresa não encontrada.', 'danger')
-        return redirect(url_for('auth.login'))
-
-    if empresa.obras.count() >= empresa.max_obras:
-        flash('Limite de obras atingido. Faça upgrade do plano.', 'warning')
+    # Verificar limite de obras via service
+    pode_criar, _, max_obras = ObraService.verificar_limite_obras(empresa_id)
+    if not pode_criar:
+        flash(f'Limite de obras ({max_obras}) atingido. Faça upgrade do plano.', 'warning')
         return redirect(url_for('main.obras'))
 
     if request.method == 'POST':
-        try:
-            nome = request.form.get('nome', '').strip()
-            if not nome:
-                flash('Nome da obra é obrigatório.', 'danger')
-                return render_template('main/obra_form.html', obra=None)
+        dados = {
+            'nome': request.form.get('nome', '').strip(),
+            'descricao': request.form.get('descricao'),
+            'endereco': request.form.get('endereco'),
+            'orcamento_previsto': sanitize_float(request.form.get('orcamento_previsto')),
+            'data_inicio': request.form.get('data_inicio'),
+            'data_fim_prevista': request.form.get('data_fim_prevista'),
+            'status': request.form.get('status') or 'Planejamento',
+            'progresso': sanitize_int(request.form.get('progresso'), min_val=0, max_val=100) or 0,
+            'responsavel': request.form.get('responsavel'),
+            'cliente': request.form.get('cliente'),
+        }
 
-            obra = Obra(
-                empresa_id=empresa_id,
-                nome=nome,
-                descricao=request.form.get('descricao'),
-                endereco=request.form.get('endereco'),
-                orcamento_previsto=sanitize_float(request.form.get('orcamento_previsto')),
-                data_inicio=datetime.strptime(request.form.get('data_inicio'), '%Y-%m-%d').date()
-                if request.form.get('data_inicio')
-                else None,
-                data_fim_prevista=datetime.strptime(
-                    request.form.get('data_fim_prevista'), '%Y-%m-%d'
-                ).date()
-                if request.form.get('data_fim_prevista')
-                else None,
-                status=request.form.get('status') or 'Planejamento',
-                progresso=sanitize_int(request.form.get('progresso'), min_val=0, max_val=100) or 0,
-                responsavel=request.form.get('responsavel'),
-                cliente=request.form.get('cliente'),
-            )
-            db.session.add(obra)
-            db.session.commit()
+        obra, erro = ObraService.criar_obra(empresa_id, dados)
+
+        if erro:
+            flash(erro, 'danger')
+            return render_template('main/obra_form.html', obra=None)
+        else:
+            invalidate_dashboard_cache(empresa_id)
             AuditService.log('Criar obra', 'Obra', obra.id, f'Nova obra: {obra.nome}')
             flash('Obra cadastrada com sucesso!', 'success')
             return redirect(url_for('main.obras'))
-        except Exception as e:
-            db.session.rollback()
-            import traceback
-
-            current_app.logger.error(f'Erro ao criar obra: {e}')
-            current_app.logger.error(traceback.format_exc())
-            flash(f'Erro ao cadastrar obra: {e!s}', 'danger')
-            return render_template('main/obra_form.html', obra=None)
 
     return render_template('main/obra_form.html', obra=None)
 
@@ -230,32 +184,36 @@ def nova_obra():
 @main_bp.route('/obra/<int:obra_id>/editar', methods=['GET', 'POST'])
 @login_required
 def editar_obra(obra_id):
+    """Editar obra usando ObraService"""
     empresa_id = session.get('empresa_id')
-    obra = Obra.query.filter_by(id=obra_id, empresa_id=empresa_id).first_or_404()
 
     if request.method == 'POST':
-        obra.nome = request.form.get('nome')
-        obra.descricao = request.form.get('descricao')
-        obra.endereco = request.form.get('endereco')
-        obra.orcamento_previsto = sanitize_float(request.form.get('orcamento_previsto'))
-        obra.data_inicio = (
-            datetime.strptime(request.form.get('data_inicio'), '%Y-%m-%d').date()
-            if request.form.get('data_inicio')
-            else None
-        )
-        obra.data_fim_prevista = (
-            datetime.strptime(request.form.get('data_fim_prevista'), '%Y-%m-%d').date()
-            if request.form.get('data_fim_prevista')
-            else None
-        )
-        obra.status = request.form.get('status')
-        obra.progresso = sanitize_int(request.form.get('progresso'), min_val=0, max_val=100)
-        obra.responsavel = request.form.get('responsavel')
-        obra.cliente = request.form.get('cliente')
+        dados = {
+            'nome': request.form.get('nome'),
+            'descricao': request.form.get('descricao'),
+            'endereco': request.form.get('endereco'),
+            'orcamento_previsto': sanitize_float(request.form.get('orcamento_previsto')),
+            'data_inicio': request.form.get('data_inicio'),
+            'data_fim_prevista': request.form.get('data_fim_prevista'),
+            'status': request.form.get('status'),
+            'progresso': sanitize_int(request.form.get('progresso'), min_val=0, max_val=100),
+            'responsavel': request.form.get('responsavel'),
+            'cliente': request.form.get('cliente'),
+        }
 
-        db.session.commit()
-        flash('Obra atualizada com sucesso!', 'success')
-        return redirect(url_for('main.obra_detalhe', obra_id=obra.id))
+        obra, erro = ObraService.editar_obra(obra_id, empresa_id, dados)
+
+        if erro:
+            flash(erro, 'danger')
+            # Busca obra para retornar ao form
+            obra = Obra.query.filter_by(id=obra_id, empresa_id=empresa_id).first_or_404()
+        else:
+            invalidate_dashboard_cache(empresa_id)
+            flash('Obra atualizada com sucesso!', 'success')
+            return redirect(url_for('main.obra_detalhe', obra_id=obra.id))
+
+    else:
+        obra = Obra.query.filter_by(id=obra_id, empresa_id=empresa_id).first_or_404()
 
     return render_template('main/obra_form.html', obra=obra)
 
@@ -297,13 +255,11 @@ def upload_imagem_obra(obra_id):
 
             # Tentar upload para S3 primeiro
             if current_app.config.get('USE_S3_STORAGE'):
-                timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                 filename = f'obra_{obra_id}_{timestamp}.{extensao}'
-                
+
                 url_imagem, error = StorageService.upload_file(
-                    arquivo,
-                    folder='obras',
-                    filename=filename
+                    arquivo, folder='obras', filename=filename
                 )
 
                 if error:
@@ -316,13 +272,11 @@ def upload_imagem_obra(obra_id):
                 flash('Imagem atualizada com sucesso (cloud storage)!', 'success')
             else:
                 # Fallback: storage local
-                timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                 filename = f'obra_{obra_id}_{timestamp}.{extensao}'
-                
+
                 relative_url, error = StorageService.save_local_file(
-                    arquivo,
-                    folder='obras',
-                    filename=filename
+                    arquivo, folder='obras', filename=filename
                 )
 
                 if error:
@@ -379,6 +333,7 @@ def excluir_obra(obra_id):
     obra = Obra.query.filter_by(id=obra_id, empresa_id=empresa_id).first_or_404()
     db.session.delete(obra)
     db.session.commit()
+    invalidate_dashboard_cache(empresa_id)
     flash('Obra excluída com sucesso!', 'success')
     return redirect(url_for('main.obras'))
 
@@ -386,38 +341,24 @@ def excluir_obra(obra_id):
 @main_bp.route('/lancamentos')
 @login_required
 def lancamentos():
-    """Lista de lancamentos com filtros e paginação"""
+    """Lista de lancamentos com filtros e paginação usando LancamentoService"""
     empresa_id = session.get('empresa_id')
 
     # Obter parâmetros de filtro
-    obra_id = request.args.get('obra_id', '')
-    tipo = request.args.get('tipo', '')
-    categoria = request.args.get('categoria', '')
-    data_inicio = request.args.get('data_inicio', '')
-    data_fim = request.args.get('data_fim', '')
-    busca = request.args.get('busca', '')
+    filtros = {
+        'obra_id': request.args.get('obra_id', ''),
+        'tipo': request.args.get('tipo', ''),
+        'categoria': request.args.get('categoria', ''),
+        'data_inicio': request.args.get('data_inicio', ''),
+        'data_fim': request.args.get('data_fim', ''),
+        'busca': request.args.get('busca', ''),
+    }
+
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
 
-    # Construir query base
-    query = Lancamento.query.filter_by(empresa_id=empresa_id)
-
-    # Aplicar filtros
-    if obra_id:
-        query = query.filter_by(obra_id=int(obra_id))
-    if tipo:
-        query = query.filter_by(tipo=tipo)
-    if categoria:
-        query = query.filter_by(categoria=categoria)
-    if data_inicio:
-        query = query.filter(Lancamento.data >= datetime.strptime(data_inicio, '%Y-%m-%d').date())
-    if data_fim:
-        query = query.filter(Lancamento.data <= datetime.strptime(data_fim, '%Y-%m-%d').date())
-    if busca:
-        query = query.filter(Lancamento.descricao.ilike(f'%{busca}%'))
-
-    # Ordenar
-    query = query.order_by(Lancamento.data.desc())
+    # Usar service para construir query com filtros
+    query = LancamentoService.build_filtered_query(empresa_id, filtros)
 
     # Aplicar paginação
     from app.utils.paginacao import Paginacao
@@ -426,19 +367,7 @@ def lancamentos():
     obras = Obra.query.filter_by(empresa_id=empresa_id).all()
 
     # Construir page_args para paginação
-    page_args = {}
-    if obra_id:
-        page_args['obra_id'] = obra_id
-    if tipo:
-        page_args['tipo'] = tipo
-    if categoria:
-        page_args['categoria'] = categoria
-    if data_inicio:
-        page_args['data_inicio'] = data_inicio
-    if data_fim:
-        page_args['data_fim'] = data_fim
-    if busca:
-        page_args['busca'] = busca
+    page_args = {k: v for k, v in filtros.items() if v}
 
     return render_template(
         'main/lancamentos.html',
@@ -446,45 +375,50 @@ def lancamentos():
         paginacao=paginacao,
         page_args=page_args,
         obras=obras,
-        obra_selecionada=obra_id,
-        tipo_selecionado=tipo,
-        categoria_selecionada=categoria,
-        data_inicio=data_inicio,
-        data_fim=data_fim,
-        busca=busca,
+        obra_selecionada=filtros['obra_id'],
+        tipo_selecionado=filtros['tipo'],
+        categoria_selecionada=filtros['categoria'],
+        data_inicio=filtros['data_inicio'],
+        data_fim=filtros['data_fim'],
+        busca=filtros['busca'],
     )
 
 
 @main_bp.route('/lancamento/novo', methods=['GET', 'POST'])
 @login_required
 def novo_lancamento():
+    """Criar novo lançamento usando LancamentoService"""
     empresa_id = session.get('empresa_id')
 
     if request.method == 'POST':
-        lancamento = Lancamento(
-            empresa_id=empresa_id,
-            obra_id=sanitize_int(request.form.get('obra_id')),
-            descricao=request.form.get('descricao'),
-            categoria=request.form.get('categoria'),
-            tipo=request.form.get('tipo'),
-            valor=sanitize_float(request.form.get('valor')),
-            data=datetime.strptime(request.form.get('data'), '%Y-%m-%d').date(),
-            forma_pagamento=request.form.get('forma_pagamento'),
-            status_pagamento=request.form.get('status_pagamento'),
-            parcelas=sanitize_int(request.form.get('parcelas'), min_val=1),
-            observacoes=request.form.get('observacoes'),
-            documento=request.form.get('documento'),
-        )
-        db.session.add(lancamento)
-        db.session.commit()
-        AuditService.log(
-            'Criar lançamento',
-            'Lancamento',
-            lancamento.id,
-            f'{lancamento.tipo}: {lancamento.descricao} - R$ {lancamento.valor}',
-        )
-        flash('Lançamento cadastrado com sucesso!', 'success')
-        return redirect(url_for('main.lancamentos'))
+        dados = {
+            'obra_id': sanitize_int(request.form.get('obra_id')),
+            'descricao': request.form.get('descricao'),
+            'categoria': request.form.get('categoria'),
+            'tipo': request.form.get('tipo'),
+            'valor': sanitize_float(request.form.get('valor')),
+            'data': request.form.get('data'),
+            'forma_pagamento': request.form.get('forma_pagamento'),
+            'status_pagamento': request.form.get('status_pagamento'),
+            'parcelas': sanitize_int(request.form.get('parcelas'), min_val=1),
+            'observacoes': request.form.get('observacoes'),
+            'documento': request.form.get('documento'),
+        }
+
+        lancamento, erro = LancamentoService.criar_lancamento(empresa_id, dados)
+
+        if erro:
+            flash(erro, 'danger')
+        else:
+            AuditService.log(
+                'Criar lançamento',
+                'Lancamento',
+                lancamento.id,
+                f'{lancamento.tipo}: {lancamento.descricao} - R$ {lancamento.valor}',
+            )
+            flash('Lançamento cadastrado com sucesso!', 'success')
+            invalidate_dashboard_cache(empresa_id)
+            return redirect(url_for('main.lancamentos'))
 
     obras = Obra.query.filter_by(empresa_id=empresa_id).all()
     return render_template('main/lancamento_form.html', lancamento=None, obras=obras)
@@ -493,26 +427,35 @@ def novo_lancamento():
 @main_bp.route('/lancamento/<int:lancamento_id>/editar', methods=['GET', 'POST'])
 @login_required
 def editar_lancamento(lancamento_id):
+    """Editar lançamento usando LancamentoService"""
     empresa_id = session.get('empresa_id')
-    lancamento = Lancamento.query.filter_by(id=lancamento_id, empresa_id=empresa_id).first_or_404()
 
     if request.method == 'POST':
-        lancamento.obra_id = sanitize_int(request.form.get('obra_id'))
-        lancamento.descricao = request.form.get('descricao')
-        lancamento.categoria = request.form.get('categoria')
-        lancamento.tipo = request.form.get('tipo')
-        lancamento.valor = sanitize_float(request.form.get('valor'))
-        lancamento.data = datetime.strptime(request.form.get('data'), '%Y-%m-%d').date()
-        lancamento.forma_pagamento = request.form.get('forma_pagamento')
-        lancamento.status_pagamento = request.form.get('status_pagamento')
-        lancamento.parcelas = sanitize_int(request.form.get('parcelas'), min_val=1)
-        lancamento.observacoes = request.form.get('observacoes')
-        lancamento.documento = request.form.get('documento')
+        dados = {
+            'obra_id': sanitize_int(request.form.get('obra_id')),
+            'descricao': request.form.get('descricao'),
+            'categoria': request.form.get('categoria'),
+            'tipo': request.form.get('tipo'),
+            'valor': sanitize_float(request.form.get('valor')),
+            'data': request.form.get('data'),
+            'forma_pagamento': request.form.get('forma_pagamento'),
+            'status_pagamento': request.form.get('status_pagamento'),
+            'parcelas': sanitize_int(request.form.get('parcelas'), min_val=1),
+            'observacoes': request.form.get('observacoes'),
+            'documento': request.form.get('documento'),
+        }
 
-        db.session.commit()
-        flash('Lançamento atualizado com sucesso!', 'success')
-        return redirect(url_for('main.lancamentos'))
+        lancamento, erro = LancamentoService.editar_lancamento(lancamento_id, empresa_id, dados)
 
+        if erro:
+            flash(erro, 'danger')
+        else:
+            invalidate_dashboard_cache(empresa_id)
+            flash('Lançamento atualizado com sucesso!', 'success')
+            return redirect(url_for('main.lancamentos'))
+
+    # GET request - buscar lançamento existente
+    lancamento = Lancamento.query.filter_by(id=lancamento_id, empresa_id=empresa_id).first_or_404()
     obras = Obra.query.filter_by(empresa_id=empresa_id).all()
     return render_template('main/lancamento_form.html', lancamento=lancamento, obras=obras)
 
@@ -520,11 +463,17 @@ def editar_lancamento(lancamento_id):
 @main_bp.route('/lancamento/<int:lancamento_id>/excluir', methods=['POST'])
 @login_required
 def excluir_lancamento(lancamento_id):
+    """Excluir lançamento usando LancamentoService"""
     empresa_id = session.get('empresa_id')
-    lancamento = Lancamento.query.filter_by(id=lancamento_id, empresa_id=empresa_id).first_or_404()
-    db.session.delete(lancamento)
-    db.session.commit()
-    flash('Lançamento excluído com sucesso!', 'success')
+
+    _, erro = LancamentoService.excluir_lancamento(lancamento_id, empresa_id)
+
+    if erro:
+        flash(erro, 'danger')
+    else:
+        invalidate_dashboard_cache(empresa_id)
+        flash('Lançamento excluído com sucesso!', 'success')
+
     return redirect(url_for('main.lancamentos'))
 
 
