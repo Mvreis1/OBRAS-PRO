@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from app.config import OPENAI_API_KEY
+from app.config import OPENAI_API_KEY, GEMINI_API_KEY, CLAUDE_API_KEY
 from app.models import ConfigIA
 from app.utils.ia import gerar_resposta, get_contexto_empresa
 
@@ -20,16 +20,10 @@ class IAService:
     ) -> str:
         """
         Process chat message with selected AI model.
-
-        Args:
-            empresa_id: Empresa ID for context
-            mensagem: User message
-            modelo: AI model to use (local, gpt-*, gemini, claude)
-            max_length: Max message length
-
-        Returns:
-            AI response string
         """
+        if not mensagem:
+            return "Por favor, digite uma mensagem."
+
         # Validate message length
         if len(mensagem) > max_length:
             return f'Mensagem muito longa. Limite: {max_length} caracteres.'
@@ -39,27 +33,31 @@ class IAService:
         config = ConfigIA.query.filter_by(empresa_id=empresa_id).first()
 
         # Route to appropriate model
-        if modelo in IAService.OPENAI_MODELS:
-            return IAService._call_openai(mensagem, contexto, modelo, config)
-        elif modelo == 'gemini':
-            return IAService._call_gemini(mensagem, contexto, config)
-        elif modelo == 'claude':
-            return IAService._call_claude(mensagem, contexto, config)
-        else:
-            # Use local AI
-            return gerar_resposta(mensagem, contexto)
+        try:
+            if modelo in IAService.OPENAI_MODELS:
+                return IAService._call_openai(mensagem, contexto, modelo, config)
+            elif modelo == 'gemini':
+                return IAService._call_gemini(mensagem, contexto, config)
+            elif modelo == 'claude':
+                return IAService._call_claude(mensagem, contexto, config)
+            else:
+                # Use local AI
+                return gerar_resposta(mensagem, contexto)
+        except Exception as e:
+            print(f"ERRO IA CRITICO: {str(e)}")
+            return f"Ocorreu um erro interno ao processar sua solicitação: {str(e)}. Usando assistente local.\n\n" + gerar_resposta(mensagem, contexto)
 
     @staticmethod
     def _call_openai(mensagem: str, contexto: dict, modelo: str, config) -> str:
         """Call OpenAI API"""
-        # Get API key
+        # Get API key (Empresa key has precedence over Global key)
         api_key = config.get_openai_key() if config else None
         if not api_key:
             api_key = OPENAI_API_KEY
 
         if not api_key:
             return (
-                '⚠️ API Key da OpenAI não configurada. Vá em Configurações > IA para cadastrar.\n\n'
+                '⚠️ API Key da OpenAI não configurada. Configure no arquivo .env ou em Configurações > IA.\n\n'
                 + gerar_resposta(mensagem, contexto)
             )
 
@@ -67,7 +65,6 @@ class IAService:
             from openai import OpenAI
 
             client = OpenAI(api_key=api_key)
-
             system_prompt = IAService._build_system_prompt(contexto)
 
             response = client.chat.completions.create(
@@ -83,16 +80,23 @@ class IAService:
             return response.choices[0].message.content
 
         except Exception as e:
-            return f'Erro ao conectar com {modelo}: {e!s}\n\nUsando o assistente local.'
+            error_msg = str(e)
+            if "insufficient_quota" in error_msg:
+                return "❌ Erro na OpenAI: Saldo insuficiente ou cota atingida. Verifique sua conta na OpenAI."
+            if "invalid_api_key" in error_msg:
+                return "❌ Erro na OpenAI: API Key inválida."
+            return f'Erro ao conectar com {modelo}: {error_msg}\n\nUsando o assistente local.'
 
     @staticmethod
     def _call_gemini(mensagem: str, contexto: dict, config) -> str:
         """Call Google Gemini API"""
         api_key = config.get_gemini_key() if config else None
+        if not api_key:
+            api_key = GEMINI_API_KEY
 
         if not api_key:
             return (
-                '⚠️ API Key do Gemini não configurada. Vá em Configurações > IA para cadastrar.\n\n'
+                '⚠️ API Key do Gemini não configurada.\n\n'
                 + gerar_resposta(mensagem, contexto)
             )
 
@@ -101,23 +105,24 @@ class IAService:
 
             genai.configure(api_key=api_key)
             model = genai.GenerativeModel('gemini-pro')
-
             system_prompt = IAService._build_system_prompt(contexto)
 
             response = model.generate_content(f'{system_prompt}\n\nPergunta: {mensagem}')
             return response.text
 
         except Exception as e:
-            return f'Erro no Gemini: {e!s}. Usando assistente local.'
+            return f'Erro no Gemini: {str(e)}. Usando assistente local.'
 
     @staticmethod
     def _call_claude(mensagem: str, contexto: dict, config) -> str:
         """Call Anthropic Claude API"""
         api_key = config.get_claude_key() if config else None
+        if not api_key:
+            api_key = CLAUDE_API_KEY
 
         if not api_key:
             return (
-                '⚠️ API Key do Claude não configurada. Vá em Configurações > IA para cadastrar.\n\n'
+                '⚠️ API Key do Claude não configurada.\n\n'
                 + gerar_resposta(mensagem, contexto)
             )
 
@@ -125,7 +130,6 @@ class IAService:
             import anthropic
 
             client = anthropic.Anthropic(api_key=api_key)
-
             system_prompt = IAService._build_system_prompt(contexto)
 
             message = client.messages.create(
@@ -137,7 +141,7 @@ class IAService:
             return message.content[0].text
 
         except Exception as e:
-            return f'Erro no Claude: {e!s}. Usando assistente local.'
+            return f'Erro no Claude: {str(e)}. Usando assistente local.'
 
     @staticmethod
     def _build_system_prompt(contexto: dict) -> str:

@@ -16,11 +16,11 @@ bind = f"0.0.0.0:{get_env('PORT', '5000')}"
 backlog = 2048
 
 # Worker processes
-workers = int(get_env('GUNICORN_WORKERS', multiprocessing.cpu_count() * 2 + 1))
+workers = int(get_env('GUNICORN_WORKERS', '1'))
 worker_class = get_env('GUNICORN_WORKER_CLASS', 'gthread')
 threads = int(get_env('GUNICORN_THREADS', '4'))
 worker_connections = 1000
-max_requests = int(get_env('GUNICORN_MAX_REQUESTS', '1000'))
+max_requests = int(get_env('GUNICORN_MAX_REQUESTS', '500'))
 max_requests_jitter = int(get_env('GUNICORN_MAX_REQUESTS_JITTER', '50'))
 
 # Timeout

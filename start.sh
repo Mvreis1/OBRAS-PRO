@@ -22,15 +22,4 @@ echo "-> DATABASE_URL: ${DATABASE_URL:+configurado}"
 
 # Iniciar Gunicorn com configurações otimizadas para Render
 echo "-> Iniciando servidor..."
-exec gunicorn run:app \
-    --bind 0.0.0.0:$PORT \
-    --workers 2 \
-    --threads 4 \
-    --timeout 120 \
-    --keep-alive 5 \
-    --max-requests 1000 \
-    --max-requests-jitter 50 \
-    --access-logfile - \
-    --error-logfile - \
-    --capture-output \
-    --enable-stdio-inheritance
+exec gunicorn run:app -c gunicorn.conf.py

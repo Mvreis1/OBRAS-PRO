@@ -2,7 +2,7 @@ services:
   - type: web
     name: obras-financeiro
     runtime: python
-    plan: standard
+    plan: free
     buildCommand: ./build.sh
     startCommand: ./start.sh
     envVars:
