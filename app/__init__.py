@@ -160,6 +160,7 @@ def _seed_data(app):
     try:
         with app.app_context():
             from app.models.acesso import Role
+            from app.models import Usuario, Empresa
             from seed_rbac import seed_permissoes, seed_roles
 
             if not Role.query.first():
@@ -167,7 +168,37 @@ def _seed_data(app):
                 seed_permissoes()
                 seed_roles()
                 db.session.commit()
-                app.logger.info('Dados iniciais criados')
+
+            # Criar admin se não existir
+            if not Usuario.query.filter_by(email='admin@demo.com').first():
+                app.logger.info('Criando usuario admin...')
+                empresa = Empresa.query.first() or Empresa(
+                    nome='Demo Construções',
+                    slug='demo',
+                    email='admin@demo.com',
+                    plano='enterprise',
+                    max_usuarios=100,
+                    max_obras=1000,
+                )
+                if not Empresa.query.first():
+                    db.session.add(empresa)
+                    db.session.flush()
+
+                admin_role = Role.query.filter_by(nome='Administrador', is_system=True).first()
+                admin = Usuario(
+                    empresa_id=empresa.id,
+                    nome='Admin Demo',
+                    email='admin@demo.com',
+                    username='admin',
+                    cargo='Administrador',
+                    role='admin',
+                    role_id=admin_role.id if admin_role else None,
+                )
+                admin.set_senha('admin123')
+                db.session.add(admin)
+                db.session.commit()
+                app.logger.info('Admin criado com sucesso')
+
     except Exception:
         pass
 
