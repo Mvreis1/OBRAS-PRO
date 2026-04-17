@@ -150,14 +150,19 @@ function enviarMensagem() {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({mensagem: mensagem, modelo: modelo})
     })
-    .then(res => res.json())
-    .then(data => {
+    .then(async res => {
+        const data = await res.json();
         removerTyping();
-        adicionarMensagem('ia', data.resposta);
+        if (res.ok) {
+            adicionarMensagem('ia', data.resposta);
+        } else {
+            adicionarMensagem('ia', '❌ Erro: ' + (data.resposta || 'Erro desconhecido no servidor.'));
+        }
     })
     .catch(err => {
         removerTyping();
-        adicionarMensagem('ia', 'Desculpe, ocorreu um erro. Tente novamente.');
+        adicionarMensagem('ia', '❌ Erro de conexão: Não foi possível falar com o servidor. Verifique sua internet ou se o site está online.');
+        console.error(err);
     });
 }
 
