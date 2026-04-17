@@ -15,7 +15,7 @@ flask-mail==0.10.0
 Pillow==10.3.0
 cachelib==0.13.0
 Flask-Limiter==3.5.0
-email-validator==2.1.0
+email-validator==2.1.1
 openpyxl==3.1.5
 Flasgger==0.9.7.1
 APScheduler==3.10.4
