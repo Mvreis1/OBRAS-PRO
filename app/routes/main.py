@@ -50,10 +50,13 @@ def dashboard():
     empresa_id = session.get('empresa_id')
     cache_key = f'dashboard:{empresa_id}'
 
-    # Verificar cache primeiro
-    cached_data = current_app.cache.get(cache_key)
-    if cached_data:
-        return render_template('main/dashboard.html', **cached_data)
+    # Verificar cache primeiro (com tratamento de erro)
+    try:
+        cached_data = current_app.cache.get(cache_key)
+        if cached_data:
+            return render_template('main/dashboard.html', **cached_data)
+    except Exception:
+        pass  # Se cache falhar, continua sem cache
 
     # Obter dados do dashboard via service
     resumo = DashboardService.get_dashboard_resumo(empresa_id)
@@ -89,8 +92,11 @@ def dashboard():
         'alertas_alertas': [],
     }
 
-    # Armazenar no cache (5 minutos)
-    current_app.cache.set(cache_key, template_data, timeout=300)
+    # Armazenar no cache (5 minutos) - opcional
+    try:
+        current_app.cache.set(cache_key, template_data, timeout=300)
+    except Exception:
+        pass
 
     return render_template('main/dashboard.html', **template_data)
 
