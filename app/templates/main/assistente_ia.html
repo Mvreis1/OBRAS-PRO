@@ -145,9 +145,14 @@ function enviarMensagem() {
     input.value = '';
     mostrarTyping();
     
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    
     fetch('/ia/chat', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
         body: JSON.stringify({mensagem: mensagem, modelo: modelo})
     })
     .then(async res => {
