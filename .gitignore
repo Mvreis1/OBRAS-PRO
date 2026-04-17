@@ -58,3 +58,6 @@ htmlcov/
 db_manager.py
 seed_rbac.py
 criar_dados.py
+
+# Stakpak session files
+.stakpak/session*
