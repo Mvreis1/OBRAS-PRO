@@ -1,0 +1,39 @@
+Possíveis melhorias para ficar "completo":
+1.
+Relatórios avançados - Lucro/prejuízo por período, comparações orçamento vs real
+2.
+Notificações por email - Alertas de orçamento estourado, pagamentos vencendo
+3.
+Importação de extrato bancário - Importar arquivos OFX/CNAB
+4.
+Gestão de contratos - Acompanhamento de contratos com clientes
+5.
+Orçamentos/Quotes - Criar orçamentos para novas obras
+6.
+Fornecedores - Cadastro de fornecedores com histórico
+7.
+Transações recorrentes - Despesas fixas recorrentes
+8.
+API pública - Para integrações externas
+9.
+Backup manual - Download/upload do banco de dados
+10.
+Portal do cliente - Cliente visualiza progresso da obra
+Para um MVP (Produto Mínimo Viável), o sistema já está muito funcional. As melhorias mais solicitadas em geral são: relatórios detalhados e notificações por email.
+Quer que eu implemente alguma dessas funcionalidades?
+
+1.
+Corrigir os bugs identificados (indentação, segurança)
+
+2.Adicionar rate limiting nas APIs
+Adicionar paginação nas listas
+Corrigir consultas N+1 no dashboard e obras
+Adicionar validação de input nos formulários
+
+
+Adicionar Cronograma Físico-Financeiro (com Gantt)
+3.
+Implementar Fluxo de Caixa Projetado
+4.
+Criar importação de extrato bancário OFX
+Qual você prefere que eu comece?
