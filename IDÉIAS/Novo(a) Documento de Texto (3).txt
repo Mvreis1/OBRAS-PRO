@@ -1,6 +1,0 @@
-barra de rolamento vertical esquerda
-
-Letras de cor branca no modo dark
-Letras de preto no moda whith
-
-esconder valores em todos os quadros aba dashboard, lançamentos ( orçamento total, despesas do mês, receitas do mês e saldo atual)
