@@ -39,7 +39,7 @@ def historico_geral():
     )
 
     return render_template(
-        'main/historico.html',
+        'main/logs.html',
         logs=paginacao.items,
         paginacao=paginacao,
         filtros={'entidade': entidade, 'usuario_id': usuario_id, 'periodo': periodo},

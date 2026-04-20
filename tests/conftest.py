@@ -148,6 +148,10 @@ def viewer_user(app_context):
     db.session.flush()
 
     viewer_role = Role.query.filter_by(nome='Visitante', is_system=True).first()
+    if not viewer_role:
+        viewer_role = Role(nome='Visitante', descricao='Visualizador', is_system=True)
+        db.session.add(viewer_role)
+        db.session.flush()
 
     usuario = Usuario(
         empresa_id=empresa.id,
